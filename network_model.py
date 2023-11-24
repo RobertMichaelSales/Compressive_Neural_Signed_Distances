@@ -8,22 +8,28 @@ import tensorflow as tf
 
 #==============================================================================
 
-def ConstructNetwork(hidden_layers,neurons_per_layer,activation):
+def ConstructNetwork(layer_dimensions,activation):
 
-    for layer in range(hidden_layers):
+    import random; tf.random.set_seed(123);np.random.seed(123);random.seed(123)
+    
+    total_layers = len(layer_dimensions)
+    
+    for layer in range(total_layers):
         
         if (layer == 0):
             
-            inputs = tf.keras.layers.Input(shape=(3,),name="L{}_input".format(layer))
-            x = tf.keras.layers.Dense(units=neurons_per_layer,activation=activation,name="L{}_dense".format(layer))(inputs)
+            inputs = tf.keras.layers.Input(shape=(layer_dimensions[layer],),name="L{}_input".format(layer))
+            x = tf.keras.layers.Dense(units=layer_dimensions[layer+1],activation=activation,name="L{}_dense".format(layer))(inputs)
             
-        else:
+        elif (layer == (total_layers - 1)):
             
-            x = tf.keras.layers.Dense(units=neurons_per_layer,activation=activation,name="L{}_dense".format(layer))(x)
+            outputs = tf.keras.layers.Dense(units=layer_dimensions[layer],activation="tanh",name="L{}_output".format(layer))(x)
+            
+        else:        
+        
+            x = tf.keras.layers.Dense(units=layer_dimensions[layer],activation=activation,name="L{}_dense".format(layer))(x)
     
         ##
-        
-        outputs = tf.keras.layers.Dense(units=1,activation="tanh",name="L{}_output".format(hidden_layers))(x)
         
     ##
     

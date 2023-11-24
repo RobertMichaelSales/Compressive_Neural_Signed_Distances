@@ -1,4 +1,4 @@
-""" Created: 29.01.2024  \\  Updated: 29.01.2024  \\   Author: Robert Sales """
+""" Created: 29.01.2024  \\  Updated: 05.02.2024  \\   Author: Robert Sales """
 
 #==============================================================================
 # Import libraries and set flags
@@ -15,7 +15,7 @@ import tensorflow as tf
 
 from data_management         import LoadMeshDataset,MakeMeshDataset,LoadGridDataset,MakeGridDataset,SaveData
 from network_model           import ConstructNetwork
-from configuration_classes   import GenericConfigurationClass
+from configuration_classes   import GenericConfigurationClass,NetworkConfigurationClass
 from compress_utilities      import TrainStep,GetLearningRate,MeanAbsoluteErrorMetric,MeanAbsoluteError,Logger
 
 #==============================================================================
@@ -122,11 +122,11 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     # Configure network 
     print("-"*80,"\nCONFIGURING NETWORK:")
     
-    # Set this as a method once I have decided what the network is actually going to look like 
-    network_config.neurons_per_layer = 32 
+    # Generate the network structure based on the input dimensions
+    network_config.GenerateStructure(i_dimensions=mesh_dataset.i_dimensions,o_dimensions=mesh_dataset.o_dimensions,dataset_size=100000)    
     
     # Build SquashSDF from the network configuration information
-    SquashSDF = ConstructNetwork(hidden_layers=network_config.hidden_layers,neurons_per_layer=network_config.neurons_per_layer,activation=network_config.activation)
+    SquashSDF = ConstructNetwork(layer_dimensions=network_config.layer_dimensions,activation=network_config.activation)
                       
     # Set a training optimiser
     optimiser = tf.keras.optimizers.Adam()
@@ -293,7 +293,7 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
 
 if __name__=="__main__":
     
-        network_config  = GenericConfigurationClass({"network_name" : "squashsdf", "hidden_layers" : 8, "target_compression_ratio" : 10, "minimum_neurons_per_layer" : 1, "activation" : "elu",})
+        network_config  = NetworkConfigurationClass({"network_name" : "squashsdf", "hidden_layers" : 8, "target_compression_ratio" : 10, "minimum_neurons_per_layer" : 1, "activation" : "elu",})
     
         dataset_config  = GenericConfigurationClass({"mesh_filepath" : "/home/rms221/Documents/Compressive_Neural_Signed_Distances/inputs/bumpy-cube.obj"})
     
@@ -303,7 +303,7 @@ if __name__=="__main__":
         
         o_filepath      = "/home/rms221/Documents/Compressive_Neural_Signed_Distances/outputs/"
         
-        compress(network_config=network_config,dataset_config=dataset_config,runtime_config=runtime_config,training_config=training_config,o_filepath=o_filepath)
+        # compress(network_config=network_config,dataset_config=dataset_config,runtime_config=runtime_config,training_config=training_config,o_filepath=o_filepath)
          
 else: pass
 

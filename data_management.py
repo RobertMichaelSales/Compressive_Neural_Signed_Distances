@@ -223,7 +223,8 @@ def MakeMeshDataset(mesh,batch_size,sample_method,dataset_size,save_filepath,sho
     dataset.dataset_size = dataset_size
     dataset.size = len(dataset)
     dataset.batch_size = batch_size
-    
+    dataset.i_dimensions = 3
+    dataset.o_dimensions = 1
     dataset.sample_points_3d = sample_points_3d
     dataset.signed_distances = signed_distances
     
@@ -264,7 +265,8 @@ def LoadMeshDataset(mesh,batch_size,sample_method,dataset_size,load_filepath,sho
     dataset.dataset_size = dataset_size
     dataset.size = len(dataset)
     dataset.batch_size = batch_size
-    
+    dataset.i_dimensions = 3
+    dataset.o_dimensions = 1
     dataset.sample_points_3d = sample_points_3d
     dataset.signed_distances = signed_distances
     
@@ -472,6 +474,8 @@ def MeshDatasetFromGenerator(mesh,batch_size,sample_method,dataset_size):
 
     dataset.size = int(np.ceil(data.dataset_size/data.batch_size))
     dataset.batch_size = batch_size
+    dataset.i_dimensions = 3
+    dataset.o_dimensions = 1
     
     return dataset
     
@@ -571,7 +575,8 @@ def MakeGridDataset(mesh,batch_size,resolution,bbox_scale,save_filepath,show=Fal
     dataset.size = len(dataset)
     dataset.batch_size = batch_size
     dataset.resolution = resolution
-    
+    dataset.i_dimensions = 3
+    dataset.o_dimensions = 1
     dataset.sample_points_3d = sample_points_3d
     dataset.signed_distances = signed_distances
     
@@ -611,7 +616,8 @@ def LoadGridDataset(mesh,batch_size,resolution,bbox_scale,load_filepath,show=Fal
     dataset.size = len(dataset)
     dataset.batch_size = batch_size
     dataset.resolution = resolution
-    
+    dataset.i_dimensions = 3
+    dataset.o_dimensions = 1
     dataset.sample_points_3d = sample_points_3d
     dataset.signed_distances = signed_distances
     
@@ -650,12 +656,6 @@ def ProgressBar(current,end):
 
 def SaveData(output_data_path,sample_points_3d,signed_distances,reverse_normalise=True):
                     
-    # Reverse normalise 'volume' and 'values' to the initial ranges
-    # if reverse_normalise:
-    #     volume.data = ((volume.rng*(volume.data/2.0))+volume.avg)
-    #     values.data = ((values.rng*(values.data/2.0))+values.avg)
-    # else: pass
-
     # Save as Numpy file 
     np.save(output_data_path,np.concatenate((sample_points_3d,signed_distances),axis=-1))
     
@@ -674,39 +674,5 @@ def SaveData(output_data_path,sample_points_3d,signed_distances,reverse_normalis
     gridToVTK(output_data_path,*sample_points_3d_list,pointData=signed_distances_dict)
         
     return None
-
-#==============================================================================
-# Test 1
-
-# dataset_size = 10000
-# batch_size = 1024
-# sample_method = "vertice"
-
-# mesh_filename = "/home/rms221/Documents/Compressive_Signed_Distance_Functions/ICML2021/neuralImplicitTools/data/bumpy-cube.obj"
-# mesh = trimesh.load(mesh_filename)
-# tick = time.time()
-# dataset = MakeDatasetFromGenerator(mesh=mesh,batch_size=batch_size,sample_method=sample_method,dataset_size=dataset_size)    
-# for batch in dataset: pass
-# tock = time.time()
-# print("Elapsed Time: {:.3}s".format(tock-tick))
-
-# mesh_filename = "/home/rms221/Documents/Compressive_Signed_Distance_Functions/ICML2021/neuralImplicitTools/data/bumpy-cube.obj"
-# mesh = trimesh.load(mesh_filename)
-# tick = time.time()
-# dataset = MakeDataset(mesh=mesh,batch_size=batch_size,sample_method=sample_method,dataset_size=dataset_size)
-# for batch in dataset: pass
-# tock = time.time()
-# print("Elapsed Time: {:.3}s".format(tock-tick))
-
-#==============================================================================
-# Test 2
-
-# mesh_filename = "/home/rms221/Documents/Compressive_Signed_Distance_Functions/ICML2021/neuralImplicitTools/data/bumpy-cube.obj"
-# mesh = trimesh.load(mesh_filename)
-# data = DataDataset(mesh=mesh,batch_size=10,sample_method="vertice",dataset_size=65)
-
-# data.GenerateData()
-# points = trimesh.PointCloud(vertices=data.sample_points_3d)
-# trimesh.Scene([points]).show(flags={'wireframe':True,},line_settings={'line_width':1,'point_size':1})
 
 #==============================================================================
