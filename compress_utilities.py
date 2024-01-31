@@ -3,7 +3,7 @@
 #==============================================================================
 # Import libraries and set flags
 
-import math, sys
+import math, sys, trimesh
 import numpy as np
 import tensorflow as tf
 
@@ -104,7 +104,7 @@ def TrainStep(model,optimiser,metric,sample_points_3d,signed_distances):
 #==============================================================================
 # Define a function that computes the mean squared loss on predictions 
 
-def MeanAbsoluteError(true,pred,weights):
+def MeanAbsoluteError(true,pred):
         
     # Compute the weighted mean squared error between signals
     mae = tf.math.reduce_mean(tf.math.abs(tf.math.subtract(pred,true)))                           
@@ -122,5 +122,3 @@ def GetLearningRate(initial_lr,half_life,epoch):
     return current_lr
 
 #==============================================================================
-
-

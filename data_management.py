@@ -9,7 +9,7 @@ import tensorflow as tf
 
 #==============================================================================
 
-class DataDataset():
+class MeshDataset():
     
     def __init__(self,mesh,batch_size,sample_method,dataset_size):
         
@@ -182,28 +182,32 @@ class DataDataset():
             self.sample_points_3d = np.concatenate([self.sample_points_3d,sample_points_3d_batch])
             
             self.signed_distances = np.concatenate([self.signed_distances,signed_distances_batch])
+            
+            print(ProgressBar(current=self.sample_points_3d.shape[0],end=self.dataset_size),end="")
         
         ##
         
         self.sample_points_3d = self.sample_points_3d[:self.dataset_size,:]
         
         self.signed_distances = self.signed_distances[:self.dataset_size,:]
-                
+                        
         return None
     
     ##
     
 #==============================================================================
 
-def MakeDatasetFromTensorSlice(mesh,batch_size,sample_method,dataset_size):
+def MakeMeshDataset(mesh,batch_size,sample_method,dataset_size,save_filepath,show=False):
     
-    data = DataDataset(mesh=mesh,batch_size=batch_size,sample_method=sample_method,dataset_size=dataset_size)
+    mesh_data = MeshDataset(mesh=mesh,batch_size=batch_size,sample_method=sample_method,dataset_size=dataset_size)
     
-    data.GenerateData()
+    mesh_data.GenerateData()
     
-    sample_points_3d = tf.convert_to_tensor(data.sample_points_3d.astype("float32"))
+    np.save(file=save_filepath,arr=np.concatenate((mesh_data.sample_points_3d,mesh_data.signed_distances),axis=-1))
     
-    signed_distances = tf.convert_to_tensor(data.signed_distances.astype("float32"))
+    sample_points_3d = tf.convert_to_tensor(mesh_data.sample_points_3d.astype("float32"))
+    
+    signed_distances = tf.convert_to_tensor(mesh_data.signed_distances.astype("float32"))
 
     dataset = tf.data.Dataset.from_tensor_slices((sample_points_3d,signed_distances))
     
@@ -215,15 +219,61 @@ def MakeDatasetFromTensorSlice(mesh,batch_size,sample_method,dataset_size):
     
     dataset = dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
 
+    dataset.dataset_size = dataset_size
     dataset.size = len(dataset)
+    dataset.batch_size = batch_size
+    
+    if show:
+        mesh_data.mesh.visual.face_colors = [255,0,0,128]
+        points = trimesh.PointCloud(vertices=mesh_data.sample_points_3d,colors=[0,0,255,128])
+        trimesh.Scene([points,mesh_data.mesh]).show(line_settings={'point_size':0.5,})
+    ##
     
     return dataset
 
 ##
-           
+
 #==============================================================================
 
-class DataGenerator():
+def LoadMeshDataset(mesh,batch_size,sample_method,dataset_size,load_filepath,show=False):
+    
+    mesh_data = MeshDataset(mesh=mesh,batch_size=batch_size,sample_method=sample_method,dataset_size=dataset_size)
+    
+    mesh_data.sample_points_3d = np.load(load_filepath)[:,:-1]
+    
+    mesh_data.signed_distances = np.load(load_filepath)[:,-1:] 
+    
+    sample_points_3d = tf.convert_to_tensor(mesh_data.sample_points_3d.astype("float32"))
+    
+    signed_distances = tf.convert_to_tensor(mesh_data.signed_distances.astype("float32"))
+
+    dataset = tf.data.Dataset.from_tensor_slices((sample_points_3d,signed_distances))
+    
+    dataset = dataset.cache()
+    
+    dataset = dataset.shuffle(buffer_size=dataset_size,reshuffle_each_iteration=True)
+    
+    dataset = dataset.batch(batch_size=batch_size,drop_remainder=False,num_parallel_calls=tf.data.AUTOTUNE)
+    
+    dataset = dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
+
+    dataset.dataset_size = dataset_size
+    dataset.size = len(dataset)
+    dataset.batch_size = batch_size
+    
+    if show:
+        mesh_data.mesh.visual.face_colors = [255,0,0,128]
+        points = trimesh.PointCloud(vertices=mesh_data.sample_points_3d,colors=[0,0,255,128])
+        trimesh.Scene([points,mesh_data.mesh]).show(flags={'wireframe':True},line_settings={'line_width':2.0,'point_size':0.5,})
+    ##
+    
+    return dataset
+
+##
+               
+#==============================================================================
+
+class MeshDataGenerator():
     
     def __init__(self,mesh,batch_size,sample_method,dataset_size):
         
@@ -395,62 +445,110 @@ class DataGenerator():
     
     ##
     
+##
+    
 #==============================================================================
 
-def MakeDatasetFromGenerator(mesh,batch_size,sample_method,dataset_size):
+def MeshDatasetFromGenerator(mesh,batch_size,sample_method,dataset_size):
         
-        data = DataGenerator(mesh=mesh,batch_size=batch_size,sample_method=sample_method,dataset_size=dataset_size)
-        
-        output_types = (tf.float32,tf.float32)
-        
-        output_shapes = (tf.TensorShape((batch_size,3)),tf.TensorShape((batch_size,1)))
-        
-        generator = lambda: data.GenerateBatch()
+    data = MeshDataGenerator(mesh=mesh,batch_size=batch_size,sample_method=sample_method,dataset_size=dataset_size)
+    
+    output_types = (tf.float32,tf.float32)
+    
+    output_shapes = (tf.TensorShape((batch_size,3)),tf.TensorShape((batch_size,1)))
+    
+    generator = lambda: data.GenerateBatch()
 
-        dataset = tf.data.Dataset.from_generator(generator=generator,output_types=output_types,output_shapes=output_shapes)
-                
-        dataset = dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
+    dataset = tf.data.Dataset.from_generator(generator=generator,output_types=output_types,output_shapes=output_shapes)
+            
+    dataset = dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
 
-        dataset.size = int(np.ceil(data.dataset_size/data.batch_size))
-        
-        return dataset
+    dataset.size = int(np.ceil(data.dataset_size/data.batch_size))
+    dataset.batch_size = batch_size
+    
+    return dataset
     
     ##
 
 #==============================================================================
-if __name__ == "__main__":
 
-    dataset_size = 10000
-    batch_size = 1024
-    sample_method = "vertice"
+def MakeValidationGrid(mesh,resolution,save_filepath): 
     
-    mesh_filename = "/home/rms221/Documents/Compressive_Signed_Distance_Functions/ICML2021/neuralImplicitTools/data/bumpy-cube.obj"
-    mesh = trimesh.load(mesh_filename)
-    tick = time.time()
-    dataset = MakeDatasetFromGenerator(mesh=mesh,batch_size=batch_size,sample_method=sample_method,dataset_size=dataset_size)    
-    for batch in dataset: pass
-    tock = time.time()
-    print("Elapsed Time: {:.3}s".format(tock-tick))
+    cx,cy,cz = mesh.bounding_box.centroid
     
-    mesh_filename = "/home/rms221/Documents/Compressive_Signed_Distance_Functions/ICML2021/neuralImplicitTools/data/bumpy-cube.obj"
-    mesh = trimesh.load(mesh_filename)
-    tick = time.time()
-    dataset = MakeDatasetFromTensorSlice(mesh=mesh,batch_size=batch_size,sample_method=sample_method,dataset_size=dataset_size)
-    for batch in dataset: pass
-    tock = time.time()
-    print("Elapsed Time: {:.3}s".format(tock-tick))
-    
+    lx,ly,lz = mesh.bounding_box.extents
+
+    bbox_scale = 1.0
+
+    xs = np.linspace((cx-(lx*bbox_scale/2)),(cx+(lx*bbox_scale/2)),resolution)
+    ys = np.linspace((cy-(ly*bbox_scale/2)),(cy+(ly*bbox_scale/2)),resolution)
+    zs = np.linspace((cz-(lz*bbox_scale/2)),(cz+(lz*bbox_scale/2)),resolution)
+
+    grid = np.stack(np.meshgrid(xs,ys,zs,indexing="ij"),axis=-1).reshape((-1,3))
+
+    return grid
+
 ##
 
-#==============================================================================
-# Test 3
-'''
-mesh_filename = "/home/rms221/Documents/Compressive_Signed_Distance_Functions/ICML2021/neuralImplicitTools/data/bumpy-cube.obj"
-mesh = trimesh.load(mesh_filename)
-data = DataDataset(mesh=mesh,batch_size=10,sample_method="vertice",dataset_size=65)
 
-data.GenerateData()
-points = trimesh.PointCloud(vertices=data.sample_points_3d)
-trimesh.Scene([points]).show(flags={'wireframe':True,},line_settings={'line_width':1,'point_size':1})
-'''
+def LoadValidationGrid(mesh,resolution,load_filepath): 
+    
+    
+
+    return grid
+
+##
+    
+#==============================================================================
+
+def ProgressBar(current,end):
+
+    if end < current: current = end
+
+    progress = np.round((current/end)*25).astype(int)
+    
+    complete = (current/end)*100
+
+    prog_bar = "[" + ("="*(progress)) + ">" + ("."*(25-progress)) + "]" + " {:5.1f}% Complete".format(complete)
+    
+    prog_bar = "\r{:30}{}".format("Progress:",prog_bar)
+    
+    return prog_bar
+
+##
+
+#==========================================================================
+# Test 1
+
+# dataset_size = 10000
+# batch_size = 1024
+# sample_method = "vertice"
+
+# mesh_filename = "/home/rms221/Documents/Compressive_Signed_Distance_Functions/ICML2021/neuralImplicitTools/data/bumpy-cube.obj"
+# mesh = trimesh.load(mesh_filename)
+# tick = time.time()
+# dataset = MakeDatasetFromGenerator(mesh=mesh,batch_size=batch_size,sample_method=sample_method,dataset_size=dataset_size)    
+# for batch in dataset: pass
+# tock = time.time()
+# print("Elapsed Time: {:.3}s".format(tock-tick))
+
+# mesh_filename = "/home/rms221/Documents/Compressive_Signed_Distance_Functions/ICML2021/neuralImplicitTools/data/bumpy-cube.obj"
+# mesh = trimesh.load(mesh_filename)
+# tick = time.time()
+# dataset = MakeDataset(mesh=mesh,batch_size=batch_size,sample_method=sample_method,dataset_size=dataset_size)
+# for batch in dataset: pass
+# tock = time.time()
+# print("Elapsed Time: {:.3}s".format(tock-tick))
+
+#==============================================================================
+# Test 2
+
+# mesh_filename = "/home/rms221/Documents/Compressive_Signed_Distance_Functions/ICML2021/neuralImplicitTools/data/bumpy-cube.obj"
+# mesh = trimesh.load(mesh_filename)
+# data = DataDataset(mesh=mesh,batch_size=10,sample_method="vertice",dataset_size=65)
+
+# data.GenerateData()
+# points = trimesh.PointCloud(vertices=data.sample_points_3d)
+# trimesh.Scene([points]).show(flags={'wireframe':True,},line_settings={'line_width':1,'point_size':1})
+
 #==============================================================================
