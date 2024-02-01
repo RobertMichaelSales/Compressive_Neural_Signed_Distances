@@ -13,7 +13,7 @@ import tensorflow as tf
 #==============================================================================
 # Import user-defined libraries 
 
-from data_management         import LoadMeshDataset,MakeMeshDataset,ValidationGrid
+from data_management         import LoadMeshDataset,MakeMeshDataset,LoadGridDataset,MakeGridDataset
 from network_model           import ConstructNetwork
 from configuration_classes   import GenericConfigurationClass
 from compress_utilities      import TrainStep,GetLearningRate,MeanAbsoluteErrorMetric,Logger
@@ -84,23 +84,22 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     # Configure dataset
     print("-"*80,"\nCONFIGURING DATASET:")
     
-    dataset_filepath = os.path.join(os.path.splitext(dataset_config.mesh_filepath)[0],training_config.sample_method,str(training_config.dataset_size),"")
-    if not os.path.exists(dataset_filepath): os.makedirs(dataset_filepath)
-    mesh_data_filepath = os.path.join(dataset_filepath,"mesh_dataset.npy")
-    grid_data_filepath = os.path.join(dataset_filepath,"grid_dataset.npy")
+    base_data_path = os.path.splitext(dataset_config.mesh_filepath)[0]
+    mesh_data_path = os.path.join(base_data_path,"mesh_"+str(training_config.sample_method)+"_"+str(training_config.dataset_size)+".npy")
+    grid_data_path = os.path.join(base_data_path,"grid_"+str(training_config.grid_resolution)+"_"+str(training_config.bbox_scale)+".npy")
     
     show = runtime_config.visualise_mesh_dataset
         
-    # Make mesh dataset to supply coordinates and signed distances in training 
-    if os.path.exists(mesh_data_filepath):
-        print("\n{:30}{}".format("Loading Training Dataset:",mesh_data_filepath.split("/")[-1]),end="   ")
-        mesh_dataset = LoadMeshDataset(mesh=mesh,batch_size=training_config.batch_size,sample_method=training_config.sample_method,dataset_size=training_config.dataset_size,load_filepath=mesh_data_filepath,show=show)
+    # Make mesh dataset to supply coordinates and signed distances 
+    if os.path.exists(mesh_data_path):
+        print("\n{:30}{}".format("Loading Mesh Dataset:",mesh_data_path.split("/")[-1]),end="    ")
+        mesh_dataset = LoadMeshDataset(mesh=mesh,batch_size=training_config.batch_size,sample_method=training_config.sample_method,dataset_size=training_config.dataset_size,load_filepath=mesh_data_path,show=show)
         precomputed_mesh = True
         print("\n\n{:30}{}".format("dataset_size:",mesh_dataset.dataset_size))
         print("\n{:30}{}".format("batch_size:",mesh_dataset.batch_size))
     else:
-        print("\n{:30}{}".format("Forming Training Dataset:",mesh_data_filepath.split("/")[-1]),end="\n\n")
-        mesh_dataset = MakeMeshDataset(mesh=mesh,batch_size=training_config.batch_size,sample_method=training_config.sample_method,dataset_size=training_config.dataset_size,save_filepath=mesh_data_filepath,show=show)        
+        print("\n{:30}{}".format("Forming Mesh Dataset:",mesh_data_path.split("/")[-1]),end="\n\n")
+        mesh_dataset = MakeMeshDataset(mesh=mesh,batch_size=training_config.batch_size,sample_method=training_config.sample_method,dataset_size=training_config.dataset_size,save_filepath=mesh_data_path,show=show)        
         precomputed_mesh = False 
         print("\n\n{:30}{}".format("dataset_size:",mesh_dataset.dataset_size))
         print("\n{:30}{}".format("batch_size:",mesh_dataset.batch_size))
@@ -108,20 +107,20 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     
     show = runtime_config.visualise_grid_dataset
                
-    # # Make grid dataset to supply coordinates and signed distances in approval 
-    # if os.path.exists(grid_data_filepath):
-    #     print("\n{:30}{}".format("Loading Approval Dataset:",mesh_data_filepath.split("/")[-1]),end="   ")
-    #     grid_dataset = LoadGridDataset(mesh=mesh,batch_size=training_config.batch_size,sample_method=training_config.sample_method,dataset_size=training_config.dataset_size,load_filepath=mesh_data_filepath,show=show)
-    #     precomputed_grid = True
-    #     print("\n\n{:30}{}".format("dataset_size:",grid_dataset.dataset_size))
-    #     print("\n{:30}{}".format("batch_size:",grid_dataset.batch_size))
-    # else:
-    #     print("\n{:30}{}".format("Forming Approval Dataset:",mesh_data_filepath.split("/")[-1]),end="\n\n")
-    #     grid_dataset = MakeMeshDataset(mesh=mesh,batch_size=training_config.batch_size,sample_method=training_config.sample_method,dataset_size=training_config.dataset_size,save_filepath=mesh_data_filepath,show=show)        
-    #     precomputed_grid = False 
-    #     print("\n\n{:30}{}".format("dataset_size:",grid_dataset.dataset_size))
-    #     print("\n{:30}{}".format("batch_size:",grid_dataset.batch_size))
-    # ##    
+    # Make grid dataset to supply coordinates and signed distances 
+    if os.path.exists(grid_data_path):
+        print("\n{:30}{}".format("Loading Grid Dataset:",grid_data_path.split("/")[-1]),end="    ")
+        grid_dataset = LoadGridDataset(mesh=mesh,batch_size=training_config.batch_size,sample_method=training_config.sample_method,dataset_size=training_config.dataset_size,load_filepath=grid_data_path,show=show)
+        precomputed_grid = True
+        print("\n\n{:30}{}".format("grid_resolution:",grid_dataset.resolution))
+        print("\n{:30}{}".format("batch_size:",grid_dataset.batch_size))
+    else:
+        print("\n{:30}{}".format("Forming Grid Dataset:",grid_data_path.split("/")[-1]),end="\n\n")
+        grid_dataset = MakeMeshDataset(mesh=mesh,batch_size=training_config.batch_size,sample_method=training_config.sample_method,dataset_size=training_config.dataset_size,save_filepath=grid_data_path,show=show)        
+        precomputed_grid = False 
+        print("\n\n{:30}{}".format("grid_resolution:",grid_dataset.resolution))
+        print("\n{:30}{}".format("batch_size:",grid_dataset.batch_size))
+    ##    
     
     return None
     
@@ -298,13 +297,13 @@ if __name__=="__main__":
     
         network_config  = GenericConfigurationClass({"network_name" : "squashsdf", "hidden_layers" : 8, "target_compression_ratio" : 10, "minimum_neurons_per_layer" : 1, "activation" : "elu",})
     
-        dataset_config  = GenericConfigurationClass({"mesh_filepath" : "/home/rms221/Documents/Compressive_Neural_Signed_Distances/Meshes/bumpy-cube.obj"})
+        dataset_config  = GenericConfigurationClass({"mesh_filepath" : "/home/rms221/Documents/Compressive_Neural_Signed_Distances/inputs/bumpy-cube.obj"})
     
         runtime_config  = GenericConfigurationClass({"print_verbose" : True, "save_network_flag" : False, "visualise_mesh_dataset" : True})
        
-        training_config = GenericConfigurationClass({"initial_lr" : 0.001, "batch_size" : 1024, "epochs" : 30, "half_life" : 2, "dataset_size" : 1000000, "sample_method" : "vertice", "grid_resolution" : 32})
+        training_config = GenericConfigurationClass({"initial_lr" : 0.001, "batch_size" : 1024, "epochs" : 30, "half_life" : 2, "dataset_size" : 1000000, "sample_method" : "vertice", "grid_resolution" : 32, "bbox_scale" : 1.0})
         
-        o_filepath      = "/home/rms221/Documents/Compressive_Neural_Signed_Distances/Output/"
+        o_filepath      = "/home/rms221/Documents/Compressive_Neural_Signed_Distances/outputs/"
         
         compress(network_config=network_config,dataset_config=dataset_config,runtime_config=runtime_config,training_config=training_config,o_filepath=o_filepath)
          

@@ -161,7 +161,7 @@ class MeshDataset():
         
         self.signed_distances = np.empty(shape=(0,1))
         
-        while self.sample_points_3d.shape[0] < self.dataset_size:
+        while self.signed_distances.shape[0] < self.dataset_size:
             
             if self.sample_method == "uniform": 
                 sample_points_3d_batch,signed_distances_batch = self.UniformSampler(self.batch_size)
@@ -472,30 +472,153 @@ def MeshDatasetFromGenerator(mesh,batch_size,sample_method,dataset_size):
 
 #==============================================================================
 
-def MakeValidationGrid(mesh,resolution,save_filepath): 
+class GridDataset():
     
-    cx,cy,cz = mesh.bounding_box.centroid
+    def __init__(self,mesh,batch_size,resolution,bbox_scale):
+        
+        self.mesh = mesh
+        
+        self.batch_size = batch_size
+        
+        self.resolution = resolution 
+        
+        self.bbox_scale = bbox_scale
+        
+        self.dataset_size = int(np.power(resolution,3))
+        
+    ##
     
-    lx,ly,lz = mesh.bounding_box.extents
+    #==========================================================================
+    
+    def GenerateGrid(self):
+        
+        cx,cy,cz = self.mesh.bounding_box.centroid
+    
+        lx,ly,lz = self.mesh.bounding_box.extents
+    
+        xs = np.linspace((cx-(lx*self.bbox_scale/2)),(cx+(lx*self.bbox_scale/2)),self.resolution)
+        
+        ys = np.linspace((cy-(ly*self.bbox_scale/2)),(cy+(ly*self.bbox_scale/2)),self.resolution)
+        
+        zs = np.linspace((cz-(lz*self.bbox_scale/2)),(cz+(lz*self.bbox_scale/2)),self.resolution)
+        
+        grid = np.meshgrid(xs,ys,zs,indexing="ij")
+    
+        self.sample_points_3d = np.stack(grid,axis=-1).reshape((-1,3))
+        
+        return None
+    
+    ##
+    
+    #==========================================================================
+    
+    def GenerateData(self):
+        
+        self.signed_distances = np.empty(shape=(self.dataset_size,1))
+        
+        self.GenerateGrid()
+            
+        number_of_batches = int(np.ceil((self.dataset_size)/self.batch_size))
+        
+        for batch in range(number_of_batches):
+            
+            indices = [self.batch_size*batch, min(self.batch_size*(batch+1),self.dataset_size)]
+                
+            sample_points_3d_batch = self.sample_points_3d[slice(*indices),:]
+            
+            signed_distances_batch = trimesh.proximity.signed_distance(self.mesh,sample_points_3d_batch)
+            
+            self.signed_distances[slice(*indices),:] = np.expand_dims(a=signed_distances_batch,axis=-1)
+            
+            print(ProgressBar(current=(batch+1),end=number_of_batches),end="")
+            
+        ##
+        
+        return None
+    
+    ##        
 
-    bbox_scale = 1.0
+#==============================================================================
 
-    xs = np.linspace((cx-(lx*bbox_scale/2)),(cx+(lx*bbox_scale/2)),resolution)
-    ys = np.linspace((cy-(ly*bbox_scale/2)),(cy+(ly*bbox_scale/2)),resolution)
-    zs = np.linspace((cz-(lz*bbox_scale/2)),(cz+(lz*bbox_scale/2)),resolution)
+mesh_filename = "/home/rms221/Documents/Compressive_Signed_Distance_Functions/ICML2021/neuralImplicitTools/data/bumpy-cube.obj"
+mesh = trimesh.load(mesh_filename)
+batch_size = 1024
+resolution = 31
+bbox_scale = 1.0
 
-    grid = np.stack(np.meshgrid(xs,ys,zs,indexing="ij"),axis=-1).reshape((-1,3))
+#==============================================================================
 
-    return grid
+def MakeGridDataset(mesh,batch_size,resolution,bbox_scale,save_filepath,show=False): 
+    
+    grid_data = GridDataset(mesh=mesh,batch_size=batch_size,resolution=resolution,bbox_scale=bbox_scale)
+
+    grid_data.GenerateData()
+    
+    np.save(file=save_filepath,arr=np.concatenate((grid_data.sample_points_3d,grid_data.signed_distances),axis=-1))
+    
+    sample_points_3d = tf.convert_to_tensor(grid_data.sample_points_3d.astype("float32"))
+    
+    signed_distances = tf.convert_to_tensor(grid_data.signed_distances.astype("float32"))
+    
+    dataset = tf.data.Dataset.from_tensor_slices((sample_points_3d,signed_distances))
+    
+    dataset = dataset.cache()
+    
+    dataset = dataset.shuffle(buffer_size=grid_data.dataset_size,reshuffle_each_iteration=True)
+    
+    dataset = dataset.batch(batch_size=batch_size,drop_remainder=False,num_parallel_calls=tf.data.AUTOTUNE)
+    
+    dataset = dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
+    
+    dataset.dataset_size = grid_data.dataset_size
+    dataset.size = len(dataset)
+    dataset.batch_size = batch_size
+    
+    if show:
+        grid_data.mesh.visual.face_colors = [255,0,0,128]
+        points = trimesh.PointCloud(vertices=grid_data.sample_points_3d,colors=[0,0,255,128])
+        trimesh.Scene([points,grid_data.mesh]).show(line_settings={'point_size':0.5,})
+    ##
+    
+    return dataset
 
 ##
 
+#==============================================================================
 
-def LoadValidationGrid(mesh,resolution,load_filepath): 
+def LoadGridDataset(mesh,batch_size,resolution,bbox_scale,load_filepath,show=False):  
     
+    grid_data = GridDataset(mesh=mesh,batch_size=batch_size,resolution=resolution)
     
+    grid_data.sample_points_3d = np.load(load_filepath)[:,:-1]
+    
+    grid_data.signed_distances = np.load(load_filepath)[:,-1:]
 
-    return grid
+    sample_points_3d = tf.convert_to_tensor(grid_data.sample_points_3d.astype("float32"))
+    
+    signed_distances = tf.convert_to_tensor(grid_data.signed_distances.astype("float32"))
+    
+    dataset = tf.data.Dataset.from_tensor_slices((sample_points_3d,signed_distances))
+    
+    dataset = dataset.cache()
+    
+    dataset = dataset.shuffle(buffer_size=grid_data.dataset_size,reshuffle_each_iteration=True)
+    
+    dataset = dataset.batch(batch_size=batch_size,drop_remainder=False,num_parallel_calls=tf.data.AUTOTUNE)
+    
+    dataset = dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
+    
+    dataset.dataset_size = grid_data.dataset_size
+    dataset.size = len(dataset)
+    dataset.batch_size = batch_size
+    
+    if show:
+        grid_data.mesh.visual.face_colors = [255,0,0,128]
+        points = trimesh.PointCloud(vertices=grid_data.sample_points_3d,colors=[0,0,255,128])
+        trimesh.Scene([points,grid_data.mesh]).show(line_settings={'point_size':0.5,})
+    ##
+    
+    return dataset
 
 ##
     
