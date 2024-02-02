@@ -3,9 +3,10 @@
 #==============================================================================
 # Import libraries and set flags
 
-import trimesh, time
+import trimesh
 import numpy as np
 import tensorflow as tf
+from pyevtk.hl import gridToVTK
 
 #==============================================================================
 
@@ -223,6 +224,9 @@ def MakeMeshDataset(mesh,batch_size,sample_method,dataset_size,save_filepath,sho
     dataset.size = len(dataset)
     dataset.batch_size = batch_size
     
+    dataset.sample_points_3d = sample_points_3d
+    dataset.signed_distances = signed_distances
+    
     if show:
         mesh_data.mesh.visual.face_colors = [255,0,0,128]
         points = trimesh.PointCloud(vertices=mesh_data.sample_points_3d,colors=[0,0,255,128])
@@ -260,6 +264,9 @@ def LoadMeshDataset(mesh,batch_size,sample_method,dataset_size,load_filepath,sho
     dataset.dataset_size = dataset_size
     dataset.size = len(dataset)
     dataset.batch_size = batch_size
+    
+    dataset.sample_points_3d = sample_points_3d
+    dataset.signed_distances = signed_distances
     
     if show:
         mesh_data.mesh.visual.face_colors = [255,0,0,128]
@@ -504,7 +511,7 @@ class GridDataset():
         
         grid = np.meshgrid(xs,ys,zs,indexing="ij")
     
-        self.sample_points_3d = np.stack(grid,axis=-1).reshape((-1,3))
+        self.sample_points_3d = np.stack(grid,axis=-1).reshape((-1,3),order="C")
         
         return None
     
@@ -540,14 +547,6 @@ class GridDataset():
 
 #==============================================================================
 
-mesh_filename = "/home/rms221/Documents/Compressive_Signed_Distance_Functions/ICML2021/neuralImplicitTools/data/bumpy-cube.obj"
-mesh = trimesh.load(mesh_filename)
-batch_size = 1024
-resolution = 31
-bbox_scale = 1.0
-
-#==============================================================================
-
 def MakeGridDataset(mesh,batch_size,resolution,bbox_scale,save_filepath,show=False): 
     
     grid_data = GridDataset(mesh=mesh,batch_size=batch_size,resolution=resolution,bbox_scale=bbox_scale)
@@ -564,8 +563,6 @@ def MakeGridDataset(mesh,batch_size,resolution,bbox_scale,save_filepath,show=Fal
     
     dataset = dataset.cache()
     
-    dataset = dataset.shuffle(buffer_size=grid_data.dataset_size,reshuffle_each_iteration=True)
-    
     dataset = dataset.batch(batch_size=batch_size,drop_remainder=False,num_parallel_calls=tf.data.AUTOTUNE)
     
     dataset = dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
@@ -573,6 +570,10 @@ def MakeGridDataset(mesh,batch_size,resolution,bbox_scale,save_filepath,show=Fal
     dataset.dataset_size = grid_data.dataset_size
     dataset.size = len(dataset)
     dataset.batch_size = batch_size
+    dataset.resolution = resolution
+    
+    dataset.sample_points_3d = sample_points_3d
+    dataset.signed_distances = signed_distances
     
     if show:
         grid_data.mesh.visual.face_colors = [255,0,0,128]
@@ -588,7 +589,7 @@ def MakeGridDataset(mesh,batch_size,resolution,bbox_scale,save_filepath,show=Fal
 
 def LoadGridDataset(mesh,batch_size,resolution,bbox_scale,load_filepath,show=False):  
     
-    grid_data = GridDataset(mesh=mesh,batch_size=batch_size,resolution=resolution)
+    grid_data = GridDataset(mesh=mesh,batch_size=batch_size,resolution=resolution,bbox_scale=bbox_scale)
     
     grid_data.sample_points_3d = np.load(load_filepath)[:,:-1]
     
@@ -602,8 +603,6 @@ def LoadGridDataset(mesh,batch_size,resolution,bbox_scale,load_filepath,show=Fal
     
     dataset = dataset.cache()
     
-    dataset = dataset.shuffle(buffer_size=grid_data.dataset_size,reshuffle_each_iteration=True)
-    
     dataset = dataset.batch(batch_size=batch_size,drop_remainder=False,num_parallel_calls=tf.data.AUTOTUNE)
     
     dataset = dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
@@ -611,6 +610,10 @@ def LoadGridDataset(mesh,batch_size,resolution,bbox_scale,load_filepath,show=Fal
     dataset.dataset_size = grid_data.dataset_size
     dataset.size = len(dataset)
     dataset.batch_size = batch_size
+    dataset.resolution = resolution
+    
+    dataset.sample_points_3d = sample_points_3d
+    dataset.signed_distances = signed_distances
     
     if show:
         grid_data.mesh.visual.face_colors = [255,0,0,128]
@@ -640,7 +643,39 @@ def ProgressBar(current,end):
 
 ##
 
-#==========================================================================
+#==============================================================================
+# Define a function to concatenate and save a scalar field to a '.npy' file
+
+# -> Note: 'volume' and 'values' must be reshaped to match the input shapes
+
+def SaveData(output_data_path,sample_points_3d,signed_distances,reverse_normalise=True):
+                    
+    # Reverse normalise 'volume' and 'values' to the initial ranges
+    # if reverse_normalise:
+    #     volume.data = ((volume.rng*(volume.data/2.0))+volume.avg)
+    #     values.data = ((values.rng*(values.data/2.0))+values.avg)
+    # else: pass
+
+    # Save as Numpy file 
+    np.save(output_data_path,np.concatenate((sample_points_3d,signed_distances),axis=-1))
+    
+    # Create dictionaries for saving a VTK
+    sample_points_3d_list, signed_distances_dict = [],{}
+            
+    for dimension in range(sample_points_3d.shape[-1]):
+        sample_points_3d_list.append(np.ascontiguousarray(sample_points_3d[...,dimension]))
+    ##
+    
+    for dimension in range(signed_distances.shape[-1]):
+        key = "sdf"
+        signed_distances_dict[key] = np.ascontiguousarray(signed_distances[...,dimension])
+    ##
+    
+    gridToVTK(output_data_path,*sample_points_3d_list,pointData=signed_distances_dict)
+        
+    return None
+
+#==============================================================================
 # Test 1
 
 # dataset_size = 10000

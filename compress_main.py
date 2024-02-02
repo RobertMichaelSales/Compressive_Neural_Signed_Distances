@@ -13,10 +13,10 @@ import tensorflow as tf
 #==============================================================================
 # Import user-defined libraries 
 
-from data_management         import LoadMeshDataset,MakeMeshDataset,LoadGridDataset,MakeGridDataset
+from data_management         import LoadMeshDataset,MakeMeshDataset,LoadGridDataset,MakeGridDataset,SaveData
 from network_model           import ConstructNetwork
 from configuration_classes   import GenericConfigurationClass
-from compress_utilities      import TrainStep,GetLearningRate,MeanAbsoluteErrorMetric,Logger
+from compress_utilities      import TrainStep,GetLearningRate,MeanAbsoluteErrorMetric,MeanAbsoluteError,Logger
 
 #==============================================================================
 
@@ -68,10 +68,6 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     print("\n{:30}{}".format("Loaded Mesh:",dataset_config.mesh_filepath.split("/")[-1]))
     mesh = trimesh.load(dataset_config.mesh_filepath)
     
-    # # Make the validation grid 
-    # print("\n{:30}{}".format("Validation Resolution:",training_config.grid_resolution))
-    # grid = ValidationGrid(mesh=mesh,resolution=training_config.grid_resolution)
-    
     # Check if the mesh is 'watertight' for computing SDFs
     if mesh.is_watertight:
         print("\n{:30}{}".format("Edges:",mesh.vertices.shape[0]))
@@ -83,7 +79,7 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     #==========================================================================
     # Configure dataset
     print("-"*80,"\nCONFIGURING DATASET:")
-    
+        
     base_data_path = os.path.splitext(dataset_config.mesh_filepath)[0]
     mesh_data_path = os.path.join(base_data_path,"mesh_"+str(training_config.sample_method)+"_"+str(training_config.dataset_size)+".npy")
     grid_data_path = os.path.join(base_data_path,"grid_"+str(training_config.grid_resolution)+"_"+str(training_config.bbox_scale)+".npy")
@@ -110,19 +106,17 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     # Make grid dataset to supply coordinates and signed distances 
     if os.path.exists(grid_data_path):
         print("\n{:30}{}".format("Loading Grid Dataset:",grid_data_path.split("/")[-1]),end="    ")
-        grid_dataset = LoadGridDataset(mesh=mesh,batch_size=training_config.batch_size,sample_method=training_config.sample_method,dataset_size=training_config.dataset_size,load_filepath=grid_data_path,show=show)
+        grid_dataset = LoadGridDataset(mesh=mesh,batch_size=training_config.batch_size,resolution=training_config.grid_resolution,bbox_scale=training_config.bbox_scale,load_filepath=grid_data_path,show=show)
         precomputed_grid = True
         print("\n\n{:30}{}".format("grid_resolution:",grid_dataset.resolution))
         print("\n{:30}{}".format("batch_size:",grid_dataset.batch_size))
     else:
         print("\n{:30}{}".format("Forming Grid Dataset:",grid_data_path.split("/")[-1]),end="\n\n")
-        grid_dataset = MakeMeshDataset(mesh=mesh,batch_size=training_config.batch_size,sample_method=training_config.sample_method,dataset_size=training_config.dataset_size,save_filepath=grid_data_path,show=show)        
+        grid_dataset = MakeGridDataset(mesh=mesh,batch_size=training_config.batch_size,resolution=training_config.grid_resolution,bbox_scale=training_config.bbox_scale,save_filepath=grid_data_path,show=show)        
         precomputed_grid = False 
         print("\n\n{:30}{}".format("grid_resolution:",grid_dataset.resolution))
         print("\n{:30}{}".format("batch_size:",grid_dataset.batch_size))
     ##    
-    
-    return None
     
     #==========================================================================
     # Configure network 
@@ -145,15 +139,13 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
         
     # Save an image of the network graph (helpful to check)
     tf.keras.utils.plot_model(model=SquashSDF,to_file=os.path.join(o_filepath,"network_graph.png"))     
-        
-    return None
-    
+            
     #==========================================================================
     # Training loop
     print("-"*80,"\nCOMPRESSING MESH:")
         
     # Create a dictionary of lists to store training data
-    training_data = {"epoch":[],"training_error":[],"time":[],"learning_rate":[],}
+    training_data = {"epoch":[],"training_error":[],"time":[],"learning_rate":[],"validation_error":[]}
 
     # Start the overall training timer
     training_time_tick = time.time()
@@ -165,6 +157,7 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
                         
         # Store and print the current epoch number
         training_data["epoch"].append(float(epoch))
+        print("{:30}{}/{}".format("Epoch:",(epoch+1),training_config.epochs))
     
         # Determine, update, store and print the learning rate 
         learning_rate = GetLearningRate(initial_lr=training_config.initial_lr,half_life=training_config.half_life,epoch=epoch)
@@ -215,36 +208,39 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     training_time = float(training_time_tock-training_time_tick)
     print("\n{:30}{:.2f} seconds".format("Training duration:",training_time))        
     
-    return None
-    
     #==========================================================================
-    # Finalise outputs    
+    # Finalise outputs   
+    
+    # Generate the pred validation SDF 
+    pred_signed_distances = SquashSDF.predict(x=grid_dataset.sample_points_3d,batch_size=training_config.batch_size,verbose="1")
+    pred_signed_distances = np.reshape(a=pred_signed_distances,newshape=((grid_dataset.resolution,)*3+(-1,)),order="C")
+    
+    # Re-shape the true validation SDF
+    true_signed_distances = grid_dataset.signed_distances.numpy()
+    true_signed_distances = np.reshape(a=true_signed_distances,newshape=((grid_dataset.resolution,)*3+(-1,)),order="C")
 
-    # Generate the validation SDF 
-    ## o_values.flat = SquashNet.predict(o_volume.flat,batch_size=training_config.batch_size,verbose="1")                                                   ?????? <<<<<<    
-    ## o_values.data = np.reshape(o_values.flat,(o_volume.data.shape[:-1]+(o_values.dimensions,)),order="C")                                                ?????? <<<<<<    
     # Compute the validation loss
-    ## print("{:30}{:.3f}".format("Mean absolute error:","NEEDS IMPLIMENTING"))                                                                             ?????? <<<<<<
-    ## training_data["validation_error"].append("NEEDS IMPLIMENTING")                                                                                       ?????? <<<<<<
+    print("{:30}{:.7f}".format("Validation Error:",np.mean(np.abs(np.subtract(true_signed_distances,pred_signed_distances)))))
+    training_data["validation_error"].append(float(np.mean(np.abs(np.subtract(true_signed_distances,pred_signed_distances)))))
     
     # Pack the configuration dictionaries into just one
     combined_config_dict = (network_config | training_config | runtime_config | dataset_config)
     
     #==========================================================================
     # Save network
-    
+
     if runtime_config.save_network_flag:
         print("-"*80,"\nSAVING NETWORK:")
         print("\n",end="")
         
         # Save the parameters
         parameters_path = os.path.join(o_filepath,"parameters.bin")
-        # EncodeParameters(network=SquashNet,parameters_path=parameters_path,values_bounds=(i_values.max,i_values.min))                                     ?????? <<<<<<
+        # EncodeParameters(network=SquashSDF,parameters_path=parameters_path,values_bounds=(i_values.max,i_values.min))
         print("{:30}{}".format("Saved parameters to:",parameters_path.split("/")[-1]))
         
         # Save the architecture
         architecture_path = os.path.join(o_filepath,"architecture.bin")
-        # EncodeArchitecture(layer_dimensions=network_config.layer_dimensions,frequencies=network_config.frequencies,architecture_path=architecture_path)   ?????? <<<<<<
+        # EncodeArchitecture(layer_dimensions=network_config.layer_dimensions,frequencies=network_config.frequencies,architecture_path=architecture_path)
         print("{:30}{}".format("Saved architecture to:",architecture_path.split("/")[-1]))
     else: pass
 
@@ -255,14 +251,17 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
         print("-"*80,"\nSAVING OUTPUTS:")
         print("\n",end="")
         
-        # Save i_volume and i_values to ".npy" and ".vtk" files
-        output_data_path = os.path.join(o_filepath,"i_volume")
-        # SaveData(output_data_path=output_data_path,volume=i_volume,values=i_values,reverse_normalise=True)                                                ?????? <<<<<<
+        # Re-shape the sampled coordinates
+        sample_points_3d = np.reshape(a=grid_dataset.sample_points_3d,newshape=((grid_dataset.resolution,)*3+(-1,)),order="C")
+        
+        # Save true grid and signed distances to ".npy" and ".vtk" files
+        output_data_path = os.path.join(o_filepath,"true_sdf")
+        SaveData(output_data_path=output_data_path,sample_points_3d=sample_points_3d,signed_distances=true_signed_distances,reverse_normalise=False)
         print("{:30}{}.{{npy,vts}}".format("Saved output files as:",output_data_path.split("/")[-1])) 
         
-        # Save o_volume and o_values to ".npy" and ".vtk" files
-        output_data_path = os.path.join(o_filepath,"o_volume")
-        # SaveData(output_data_path=output_data_path,volume=o_volume,values=o_values,reverse_normalise=True)                                                ?????? <<<<<<
+        # Save pred grid and signed distances to ".npy" and ".vtk" files
+        output_data_path = os.path.join(o_filepath,"pred_sdf")
+        SaveData(output_data_path=output_data_path,sample_points_3d=sample_points_3d,signed_distances=pred_signed_distances,reverse_normalise=False)
         print("{:30}{}.{{npy,vts}}".format("Saved output files as:",output_data_path.split("/")[-1]))        
     else: pass    
     
@@ -287,7 +286,6 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     #==========================================================================
     print("-"*80,"\n")
     
-    
     return None
        
 #==============================================================================
@@ -299,9 +297,9 @@ if __name__=="__main__":
     
         dataset_config  = GenericConfigurationClass({"mesh_filepath" : "/home/rms221/Documents/Compressive_Neural_Signed_Distances/inputs/bumpy-cube.obj"})
     
-        runtime_config  = GenericConfigurationClass({"print_verbose" : True, "save_network_flag" : False, "visualise_mesh_dataset" : True})
+        runtime_config  = GenericConfigurationClass({"print_verbose" : True, "save_network_flag" : False, "save_outputs_flag" : True, "save_results_flag" : True, "visualise_mesh_dataset" : False, "visualise_grid_dataset" : False})
        
-        training_config = GenericConfigurationClass({"initial_lr" : 0.001, "batch_size" : 1024, "epochs" : 30, "half_life" : 2, "dataset_size" : 1000000, "sample_method" : "vertice", "grid_resolution" : 32, "bbox_scale" : 1.0})
+        training_config = GenericConfigurationClass({"initial_lr" : 0.001, "batch_size" : 1024, "epochs" : 100, "half_life" : 2, "dataset_size" : 1000000, "sample_method" : "vertice", "grid_resolution" : 32, "bbox_scale" : 1.1})
         
         o_filepath      = "/home/rms221/Documents/Compressive_Neural_Signed_Distances/outputs/"
         
