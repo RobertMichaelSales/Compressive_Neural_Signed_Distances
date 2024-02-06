@@ -123,7 +123,7 @@ class NetworkConfigurationClass(GenericConfigurationClass):
     # Define a function to compute the minimum number of neurons needed by each 
     # layer in order to achieve (just exceed) the target compression ratio
 
-    def NeuronsPerLayer(self):
+    def GetNeuronsPerLayer(self):
       
         # Start searching from the minimum of 1 neuron per layer
         self.neurons_per_layer = int(self.minimum_neurons_per_layer)

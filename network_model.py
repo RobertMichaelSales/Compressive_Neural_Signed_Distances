@@ -19,7 +19,7 @@ def ConstructNetwork(layer_dimensions,activation):
         if (layer == 0):
             
             inputs = tf.keras.layers.Input(shape=(layer_dimensions[layer],),name="L{}_input".format(layer))
-            x = tf.keras.layers.Dense(units=layer_dimensions[layer+1],activation=activation,name="L{}_dense".format(layer))(inputs)
+            x = inputs
             
         elif (layer == (total_layers - 1)):
             

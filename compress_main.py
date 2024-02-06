@@ -1,4 +1,4 @@
-""" Created: 29.01.2024  \\  Updated: 05.02.2024  \\   Author: Robert Sales """
+""" Created: 29.01.2024  \\  Updated: 06.02.2024  \\   Author: Robert Sales """
 
 #==============================================================================
 # Import libraries and set flags
@@ -15,6 +15,7 @@ import tensorflow as tf
 
 from data_management         import LoadMeshDataset,MakeMeshDataset,LoadGridDataset,MakeGridDataset,SaveData
 from network_model           import ConstructNetwork
+from network_encoder         import EncodeArchitecture, EncodeParameters
 from configuration_classes   import GenericConfigurationClass,NetworkConfigurationClass
 from compress_utilities      import TrainStep,GetLearningRate,MeanAbsoluteErrorMetric,MeanAbsoluteError,Logger
 
@@ -90,13 +91,11 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     if os.path.exists(mesh_data_path):
         print("\n{:30}{}".format("Loading Mesh Dataset:",mesh_data_path.split("/")[-1]),end="    ")
         mesh_dataset = LoadMeshDataset(mesh=mesh,batch_size=training_config.batch_size,sample_method=training_config.sample_method,dataset_size=training_config.dataset_size,load_filepath=mesh_data_path,show=show)
-        precomputed_mesh = True
         print("\n\n{:30}{}".format("dataset_size:",mesh_dataset.dataset_size))
         print("\n{:30}{}".format("batch_size:",mesh_dataset.batch_size))
     else:
         print("\n{:30}{}".format("Forming Mesh Dataset:",mesh_data_path.split("/")[-1]),end="\n\n")
         mesh_dataset = MakeMeshDataset(mesh=mesh,batch_size=training_config.batch_size,sample_method=training_config.sample_method,dataset_size=training_config.dataset_size,save_filepath=mesh_data_path,show=show)        
-        precomputed_mesh = False 
         print("\n\n{:30}{}".format("dataset_size:",mesh_dataset.dataset_size))
         print("\n{:30}{}".format("batch_size:",mesh_dataset.batch_size))
     ##
@@ -107,13 +106,11 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     if os.path.exists(grid_data_path):
         print("\n{:30}{}".format("Loading Grid Dataset:",grid_data_path.split("/")[-1]),end="    ")
         grid_dataset = LoadGridDataset(mesh=mesh,batch_size=training_config.batch_size,resolution=training_config.grid_resolution,bbox_scale=training_config.bbox_scale,load_filepath=grid_data_path,show=show)
-        precomputed_grid = True
         print("\n\n{:30}{}".format("grid_resolution:",grid_dataset.resolution))
         print("\n{:30}{}".format("batch_size:",grid_dataset.batch_size))
     else:
         print("\n{:30}{}".format("Forming Grid Dataset:",grid_data_path.split("/")[-1]),end="\n\n")
         grid_dataset = MakeGridDataset(mesh=mesh,batch_size=training_config.batch_size,resolution=training_config.grid_resolution,bbox_scale=training_config.bbox_scale,save_filepath=grid_data_path,show=show)        
-        precomputed_grid = False 
         print("\n\n{:30}{}".format("grid_resolution:",grid_dataset.resolution))
         print("\n{:30}{}".format("batch_size:",grid_dataset.batch_size))
     ##    
@@ -123,7 +120,7 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     print("-"*80,"\nCONFIGURING NETWORK:")
     
     # Generate the network structure based on the input dimensions
-    network_config.GenerateStructure(i_dimensions=mesh_dataset.i_dimensions,o_dimensions=mesh_dataset.o_dimensions,dataset_size=100000)    
+    network_config.GenerateStructure(i_dimensions=mesh_dataset.i_dimensions,o_dimensions=mesh_dataset.o_dimensions,dataset_size=dataset_config.dataset_size)    
     
     # Build SquashSDF from the network configuration information
     SquashSDF = ConstructNetwork(layer_dimensions=network_config.layer_dimensions,activation=network_config.activation)
@@ -235,12 +232,12 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
         
         # Save the parameters
         parameters_path = os.path.join(o_filepath,"parameters.bin")
-        # EncodeParameters(network=SquashSDF,parameters_path=parameters_path,values_bounds=(i_values.max,i_values.min))
+        EncodeParameters(network=SquashSDF,parameters_path=parameters_path,values_bounds=(None,None))
         print("{:30}{}".format("Saved parameters to:",parameters_path.split("/")[-1]))
         
         # Save the architecture
         architecture_path = os.path.join(o_filepath,"architecture.bin")
-        # EncodeArchitecture(layer_dimensions=network_config.layer_dimensions,frequencies=network_config.frequencies,architecture_path=architecture_path)
+        EncodeArchitecture(layer_dimensions=network_config.layer_dimensions,architecture_path=architecture_path)
         print("{:30}{}".format("Saved architecture to:",architecture_path.split("/")[-1]))
     else: pass
 
@@ -295,15 +292,15 @@ if __name__=="__main__":
     
         network_config  = NetworkConfigurationClass({"network_name" : "squashsdf", "hidden_layers" : 8, "target_compression_ratio" : 10, "minimum_neurons_per_layer" : 1, "activation" : "elu",})
     
-        dataset_config  = GenericConfigurationClass({"mesh_filepath" : "/home/rms221/Documents/Compressive_Neural_Signed_Distances/inputs/bumpy-cube.obj"})
+        dataset_config  = GenericConfigurationClass({"mesh_filepath" : "/home/rms221/Documents/Compressive_Neural_Signed_Distances/inputs/bumpy-cube.obj", "dataset_size" : 100000})
     
-        runtime_config  = GenericConfigurationClass({"print_verbose" : True, "save_network_flag" : False, "save_outputs_flag" : True, "save_results_flag" : True, "visualise_mesh_dataset" : False, "visualise_grid_dataset" : False})
+        runtime_config  = GenericConfigurationClass({"print_verbose" : True, "save_network_flag" : True, "save_outputs_flag" : True, "save_results_flag" : True, "visualise_mesh_dataset" : True, "visualise_grid_dataset" : True})
        
-        training_config = GenericConfigurationClass({"initial_lr" : 0.001, "batch_size" : 1024, "epochs" : 100, "half_life" : 2, "dataset_size" : 1000000, "sample_method" : "vertice", "grid_resolution" : 32, "bbox_scale" : 1.1})
+        training_config = GenericConfigurationClass({"initial_lr" : 0.001, "batch_size" : 1024, "epochs" : 100, "half_life" : 5, "dataset_size" : 1000000, "sample_method" : "vertice", "grid_resolution" : 64, "bbox_scale" : 1.1})
         
-        o_filepath      = "/home/rms221/Documents/Compressive_Neural_Signed_Distances/outputs/"
+        o_filepath      = "/home/rms221/Documents/Compressive_Neural_Signed_Distances/outputs/" + dataset_config.mesh_filepath.split("/")[-1].replace(".obj","/")
         
-        # compress(network_config=network_config,dataset_config=dataset_config,runtime_config=runtime_config,training_config=training_config,o_filepath=o_filepath)
+        compress(network_config=network_config,dataset_config=dataset_config,runtime_config=runtime_config,training_config=training_config,o_filepath=o_filepath)
          
 else: pass
 
