@@ -24,12 +24,16 @@ def DecodeArchitecture(architecture_path):
         layer_dimensions_as_bytestring = file.read(total_num_layers*bytes_per_value)
         layer_dimensions = list(np.frombuffer(layer_dimensions_as_bytestring,dtype=np.uint16))
         
+        # Read the number of positional encoding frequencies as bytestring
+        frequencies_as_bytestring = file.read(1*bytes_per_value)
+        frequencies = int(np.frombuffer(frequencies_as_bytestring,dtype='uint16'))
+        
         # Flush the buffer and close the file 
         file.flush()
         file.close()
     ##
     
-    return layer_dimensions
+    return layer_dimensions,frequencies
 
 #==============================================================================
 

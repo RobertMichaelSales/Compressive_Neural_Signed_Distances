@@ -1,4 +1,4 @@
-""" Created: 23.01.2024  \\  Updated: 29.01.2024  \\   Author: Robert Sales """
+""" Created: 23.01.2024  \\  Updated: 07.02.2024  \\   Author: Robert Sales """
 
 #==============================================================================
 # Import libraries and set flags
@@ -200,7 +200,7 @@ class MeshDataset():
 
 def MakeMeshDataset(mesh,batch_size,sample_method,dataset_size,save_filepath,show=False):
     
-    mesh_data = MeshDataset(mesh=mesh,batch_size=batch_size,sample_method=sample_method,dataset_size=dataset_size)
+    mesh_data = MeshDataset(mesh=mesh,batch_size=2048,sample_method=sample_method,dataset_size=dataset_size)
     
     mesh_data.GenerateData()
     
@@ -242,7 +242,7 @@ def MakeMeshDataset(mesh,batch_size,sample_method,dataset_size,save_filepath,sho
 
 def LoadMeshDataset(mesh,batch_size,sample_method,dataset_size,load_filepath,show=False):
     
-    mesh_data = MeshDataset(mesh=mesh,batch_size=batch_size,sample_method=sample_method,dataset_size=dataset_size)
+    mesh_data = MeshDataset(mesh=mesh,batch_size=2048,sample_method=sample_method,dataset_size=dataset_size)
     
     mesh_data.sample_points_3d = np.load(load_filepath)[:,:-1]
     
@@ -553,7 +553,7 @@ class GridDataset():
 
 def MakeGridDataset(mesh,batch_size,resolution,bbox_scale,save_filepath,show=False): 
     
-    grid_data = GridDataset(mesh=mesh,batch_size=batch_size,resolution=resolution,bbox_scale=bbox_scale)
+    grid_data = GridDataset(mesh=mesh,batch_size=2048,resolution=resolution,bbox_scale=bbox_scale)
 
     grid_data.GenerateData()
     
@@ -594,7 +594,7 @@ def MakeGridDataset(mesh,batch_size,resolution,bbox_scale,save_filepath,show=Fal
 
 def LoadGridDataset(mesh,batch_size,resolution,bbox_scale,load_filepath,show=False):  
     
-    grid_data = GridDataset(mesh=mesh,batch_size=batch_size,resolution=resolution,bbox_scale=bbox_scale)
+    grid_data = GridDataset(mesh=mesh,batch_size=2048,resolution=resolution,bbox_scale=bbox_scale)
     
     grid_data.sample_points_3d = np.load(load_filepath)[:,:-1]
     

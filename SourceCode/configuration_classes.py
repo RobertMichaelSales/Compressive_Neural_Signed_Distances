@@ -1,4 +1,4 @@
-""" Created: 29.01.2024  \\  Updated: 05.02.2024  \\   Author: Robert Sales """
+""" Created: 29.01.2024  \\  Updated: 07.02.2024  \\   Author: Robert Sales """
 
 #==============================================================================
 # Import libraries and set flags
@@ -85,18 +85,18 @@ class NetworkConfigurationClass(GenericConfigurationClass):
     # Define a function to generate the network structure/dimensions from input
     # dimensions, output dimensions and input size.
     
-    def GenerateStructure(self,i_dimensions,o_dimensions,dataset_size):
+    def GenerateStructure(self,i_dimensions,o_dimensions,original_volume_size):
                 
         # Extract the useful internal parameters from the 'input_data' object
         self.i_dimensions = i_dimensions
         self.o_dimensions = o_dimensions
-        self.dataset_size = dataset_size
+        self.original_volume_size = original_volume_size
         
         # Print the network's target compression ratio
         print("\n{:30}{:.2f}".format("Target compression ratio:",self.target_compression_ratio))
         
         # Compute the network's target capacity
-        self.target_capacity = int(self.dataset_size/self.target_compression_ratio)
+        self.target_capacity = int(self.original_volume_size/self.target_compression_ratio)
         
         # Compute the widths of hidden layers
         self.neurons_per_layer = self.GetNeuronsPerLayer() 
@@ -105,7 +105,7 @@ class NetworkConfigurationClass(GenericConfigurationClass):
         self.actual_capacity = self.GetNetworkCapacity()
         
         # Compute the network's actual compression ratio
-        self.actual_compression_ratio = self.dataset_size/self.actual_capacity
+        self.actual_compression_ratio = self.original_volume_size/self.actual_capacity
         
         # Print the network's actual compression ratio
         print("\n{:30}{:.2f}".format("Actual compression ratio:",self.actual_compression_ratio))
@@ -165,8 +165,13 @@ class NetworkConfigurationClass(GenericConfigurationClass):
             # [input_layer -> hidden_layer]
             if (layer==0):                             
                 
-                # Determine the input and output dimensions of each layer    
-                i_dimensions = self.i_dimensions                          
+                # Determine the input and output dimensions of each layer
+                if (self.frequencies > 0):
+                    i_dimensions = self.i_dimensions * self.frequencies * 2
+                else:
+                    i_dimensions = self.i_dimensions
+                ##
+                      
                 o_dimensions = self.neurons_per_layer
                 
                 # Add parameters from the weight matrix and bias vector

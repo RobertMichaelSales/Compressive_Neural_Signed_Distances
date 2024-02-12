@@ -11,7 +11,7 @@ import numpy as np
 
 # Note: The np.method '.tobytes()' returns the same bytestring as 'struct.pack'
 
-def EncodeArchitecture(layer_dimensions,architecture_path):
+def EncodeArchitecture(layer_dimensions,frequencies,architecture_path):
 
     # Extract the total number of layer dimensions to bytestrings
     total_num_layers = np.array(len(layer_dimensions)).astype('uint16')    
@@ -21,12 +21,17 @@ def EncodeArchitecture(layer_dimensions,architecture_path):
     layer_dimensions = np.array(layer_dimensions).astype('uint16')
     layer_dimensions_as_bytestring = layer_dimensions.tobytes()
     
+    # Extract the number of positional encoding frequencies to bytestrings
+    frequencies = np.array(frequencies).astype('uint16')
+    frequencies_as_bytestring = frequencies.tobytes()
+    
     # Open the architecture file in 'write as binary' mode
     with open(architecture_path,"wb") as file:
         
         # Write each bytestring to file
         file.write(total_num_layers_as_bytestring)
         file.write(layer_dimensions_as_bytestring)
+        file.write(frequencies_as_bytestring)
         
         # Flush the buffer and close the file 
         file.flush()

@@ -1,9 +1,9 @@
-""" Created: 29.01.2024  \\  Updated: 06.02.2024  \\   Author: Robert Sales """
+""" Created: 29.01.2024  \\  Updated: 07.02.2024  \\   Author: Robert Sales """
 
 #==============================================================================
 # Import libraries and set flags
 
-import os, time, json, math, psutil, sys, gc, datetime, trimesh
+import os, time, json, psutil, sys, gc, datetime, trimesh
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 gc.enable()
 
@@ -17,7 +17,7 @@ from data_management         import LoadMeshDataset,MakeMeshDataset,LoadGridData
 from network_model           import ConstructNetwork
 from network_encoder         import EncodeArchitecture, EncodeParameters
 from configuration_classes   import GenericConfigurationClass,NetworkConfigurationClass
-from compress_utilities      import TrainStep,GetLearningRate,MeanAbsoluteErrorMetric,MeanAbsoluteError,Logger
+from compress_utilities      import TrainStep,GetLearningRate,MeanAbsoluteErrorMetric,Logger
 
 #==============================================================================
 
@@ -74,16 +74,17 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
         print("\n{:30}{}".format("Edges:",mesh.vertices.shape[0]))
         print("\n{:30}{}".format("Faces:",mesh.faces.shape[0]   ))
     else:
-        raise AssertionError("Input mesh not watertight. SDFs can only be calculated for watertight meshes.")
+        raise AssertionError("Input mesh not watertight: SDFs can only be computed for watertight meshes. Please input watertight mesh.")
     ##    
     
     #==========================================================================
     # Configure dataset
     print("-"*80,"\nCONFIGURING DATASET:")
         
+    # Define mesh and grid dataset paths, from base path directory
     base_data_path = os.path.splitext(dataset_config.mesh_filepath)[0]
-    mesh_data_path = os.path.join(base_data_path,"mesh_"+str(training_config.sample_method)+"_"+str(training_config.dataset_size)+".npy")
-    grid_data_path = os.path.join(base_data_path,"grid_"+str(training_config.grid_resolution)+"_"+str(training_config.bbox_scale)+".npy")
+    mesh_data_path = base_data_path + "_mesh_[{:}]_[{:}].npy".format(training_config.sample_method,training_config.dataset_size)
+    grid_data_path = base_data_path + "_grid_[{:}]_[{:}].npy".format(training_config.grid_resolution,training_config.bbox_scale)
     
     show = runtime_config.visualise_mesh_dataset
         
@@ -120,10 +121,10 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     print("-"*80,"\nCONFIGURING NETWORK:")
     
     # Generate the network structure based on the input dimensions
-    network_config.GenerateStructure(i_dimensions=mesh_dataset.i_dimensions,o_dimensions=mesh_dataset.o_dimensions,dataset_size=dataset_config.dataset_size)    
+    network_config.GenerateStructure(i_dimensions=mesh_dataset.i_dimensions,o_dimensions=mesh_dataset.o_dimensions,original_volume_size=dataset_config.original_volume_size)    
     
     # Build SquashSDF from the network configuration information
-    SquashSDF = ConstructNetwork(layer_dimensions=network_config.layer_dimensions,activation=network_config.activation)
+    SquashSDF = ConstructNetwork(layer_dimensions=network_config.layer_dimensions,frequencies=network_config.frequencies,activation=network_config.activation)
                       
     # Set a training optimiser
     optimiser = tf.keras.optimizers.Adam()
@@ -135,7 +136,7 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     TrainStepTFF = tf.function(TrainStep)
         
     # Save an image of the network graph (helpful to check)
-    tf.keras.utils.plot_model(model=SquashSDF,to_file=os.path.join(o_filepath,"network_graph.png"))     
+    tf.keras.utils.plot_model(model=SquashSDF,to_file=os.path.join(o_filepath,"network_graph.png"))
             
     #==========================================================================
     # Training loop
@@ -289,19 +290,82 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
 # Define the main function to run when file is invoked from within the terminal
 
 if __name__=="__main__":
+           
+    if (len(sys.argv) == 1):
+        
+        #======================================================================
+        # This block will run in the event that this script is called in an IDE
     
-        network_config  = NetworkConfigurationClass({"network_name" : "squashsdf", "hidden_layers" : 8, "target_compression_ratio" : 10, "minimum_neurons_per_layer" : 1, "activation" : "elu",})
-    
-        dataset_config  = GenericConfigurationClass({"mesh_filepath" : "/home/rms221/Documents/Compressive_Neural_Signed_Distances/inputs/bumpy-cube.obj", "dataset_size" : 100000})
-    
-        runtime_config  = GenericConfigurationClass({"print_verbose" : True, "save_network_flag" : True, "save_outputs_flag" : True, "save_results_flag" : True, "visualise_mesh_dataset" : True, "visualise_grid_dataset" : True})
+        network_config_path = "/home/rms221/Documents/Compressive_Neural_Signed_Distances/AuxFiles/inputs/configs/network_config.json"
+        
+        with open(network_config_path) as network_config_file: 
+            network_config_dictionary = json.load(network_config_file)
+            network_config = NetworkConfigurationClass(network_config_dictionary)
+        ##   
+        
+        dataset_config_path = "/home/rms221/Documents/Compressive_Neural_Signed_Distances/AuxFiles/inputs/configs/dataset_config.json"
+        
+        with open(dataset_config_path) as dataset_config_file: 
+            dataset_config_dictionary = json.load(dataset_config_file)
+            dataset_config = GenericConfigurationClass(dataset_config_dictionary)
+        ##  
+            
+        runtime_config_path = "/home/rms221/Documents/Compressive_Neural_Signed_Distances/AuxFiles/inputs/configs/runtime_config.json"
+        
+        with open(runtime_config_path) as runtime_config_file: 
+            runtime_config_dictionary = json.load(runtime_config_file)
+            runtime_config = GenericConfigurationClass(runtime_config_dictionary)
+        ##    
+            
+        training_config_path = "/home/rms221/Documents/Compressive_Neural_Signed_Distances/AuxFiles/inputs/configs/training_config.json"
+        
+        with open(training_config_path) as training_config_file: 
+            training_config_dictionary = json.load(training_config_file)
+            training_config = GenericConfigurationClass(training_config_dictionary)
+        ##
+        
+        o_filepath = "/home/rms221/Documents/Compressive_Neural_Signed_Distances/AuxFiles/outputs"
+                
+    else:  
        
-        training_config = GenericConfigurationClass({"initial_lr" : 0.001, "batch_size" : 1024, "epochs" : 100, "half_life" : 5, "dataset_size" : 1000000, "sample_method" : "vertice", "grid_resolution" : 64, "bbox_scale" : 1.1})
+        #======================================================================
+        # This block will run in the event that this script is run via terminal        
+
+        network_config  = NetworkConfigurationClass(json.loads(sys.argv[1]))
+    
+        dataset_config  = GenericConfigurationClass(json.loads(sys.argv[2]))
+    
+        runtime_config  = GenericConfigurationClass(json.loads(sys.argv[3]))
+       
+        training_config = GenericConfigurationClass(json.loads(sys.argv[4]))
         
-        o_filepath      = "/home/rms221/Documents/Compressive_Neural_Signed_Distances/outputs/" + dataset_config.mesh_filepath.split("/")[-1].replace(".obj","/")
+        o_filepath      = sys.argv[5]
         
+    #==========================================================================
+    
+    # Construct the output filepath
+    o_filepath = os.path.join(o_filepath,network_config.network_name)
+    if not os.path.exists(o_filepath): os.makedirs(o_filepath)
+        
+    # Create checkpoint and stdout logging files in case execution fails
+    checkpoint_filename = os.path.join(o_filepath,"checkpoint.txt")
+    stdout_log_filename = os.path.join(o_filepath,"stdout_log.txt")
+    
+    # Check if the checkpoint file already exists
+    if not os.path.exists(checkpoint_filename): 
+        
+        # Start logging all console i/o
+        sys.stdout = Logger(stdout_log_filename)   
+    
+        # Execute compression
         compress(network_config=network_config,dataset_config=dataset_config,runtime_config=runtime_config,training_config=training_config,o_filepath=o_filepath)
-         
+        
+        # Create a checkpoint file after successful execution
+        with open(checkpoint_filename, mode='w'): pass
+
+    else: print("Checkpoint file '{}' already exists: skipping.".format(checkpoint_filename))
+        
 else: pass
+
 
 #==============================================================================

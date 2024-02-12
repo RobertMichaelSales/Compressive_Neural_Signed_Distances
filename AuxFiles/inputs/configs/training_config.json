@@ -1,0 +1,10 @@
+{
+    "initial_lr": 0.001,
+    "batch_size": 1024,
+    "epochs": 100,
+    "half_life": 5,
+    "dataset_size": 1000000,
+    "sample_method": "vertice",
+    "grid_resolution": 64,
+    "bbox_scale": 1.1
+}
