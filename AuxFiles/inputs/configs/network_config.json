@@ -1,8 +1,11 @@
 {
     "network_name": "squashsdf",
     "hidden_layers": 8,
+    "frequencies": 0,
     "target_compression_ratio": 10,
     "activation": "elu",
     "minimum_neurons_per_layer": 1,
-    "bits_per_neuron": 32
+    "bits_per_neuron": 32,
+    "normalise": true,
+    "use_siren": false
 }

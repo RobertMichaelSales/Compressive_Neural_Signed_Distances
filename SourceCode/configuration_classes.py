@@ -76,7 +76,7 @@ class NetworkConfigurationClass(GenericConfigurationClass):
     def __init__(self,config_dict={}):
         
         super().__init__(config_dict)
-           
+        
         return None
     
     ##
@@ -92,9 +92,14 @@ class NetworkConfigurationClass(GenericConfigurationClass):
         self.o_dimensions = o_dimensions
         self.original_volume_size = original_volume_size
         
-        # Print the network's target compression ratio
-        print("\n{:30}{:.2f}".format("Target compression ratio:",self.target_compression_ratio))
-        
+        if self.use_siren:
+            self.GetNetworkCapacity = self.GetNetworkCapacitySIREN
+            print("\n{:30}{:}".format("Network Architecture:","SIREN"))
+        else:
+            self.GetNetworkCapacity = self.GetNetworkCapacityBASIC
+            print("\n{:30}{:}".format("Network Architecture:","BASIC"))
+        ##
+
         # Compute the network's target capacity
         self.target_capacity = int(self.original_volume_size/self.target_compression_ratio)
         
@@ -107,12 +112,19 @@ class NetworkConfigurationClass(GenericConfigurationClass):
         # Compute the network's actual compression ratio
         self.actual_compression_ratio = self.original_volume_size/self.actual_capacity
         
-        # Print the network's actual compression ratio
-        print("\n{:30}{:.2f}".format("Actual compression ratio:",self.actual_compression_ratio))
-        
         # Write the network architecture as a list of layer dimensions
         self.layer_dimensions = [self.i_dimensions] + ([self.neurons_per_layer]*self.hidden_layers) + [self.o_dimensions]
         
+        # Print the network's target compression ratio
+        print("\n{:30}{:.2f}".format("Target compression ratio:",self.target_compression_ratio))
+        
+        # Print the network's actual compression ratio
+        print("\n{:30}{:.2f}".format("Actual compression ratio:",self.actual_compression_ratio))
+        
+        # Print the network's encoding Frequencies
+        print("\n{:30}{}".format("Encoding frequencies:",self.frequencies))
+        
+        # Print the network's layer dimensions
         print("\n{:30}{}".format("Network dimensions:",self.layer_dimensions))
 
         return None
@@ -144,14 +156,14 @@ class NetworkConfigurationClass(GenericConfigurationClass):
     
     #==========================================================================
     # Define a function to calculate the total number of network parameters for
-    # a given network architecture (i.e. layer dimensions/neurons)
+    # a basic network architecture (i.e. layer dimensions/neurons)
     
     # The network structure can be summarised as follows:
     # [input_layer      -> hidden_layer] + 
     # [hidden_layer     -> hidden_layer] +
     # [hidden_layer     -> output_layer]  
     
-    def GetNetworkCapacity(self):    
+    def GetNetworkCapacityBASIC(self):    
         
         # Determine the number of inter-layer operations (i.e. total layers)
         self.total_layers = self.hidden_layers + 1     
@@ -199,6 +211,80 @@ class NetworkConfigurationClass(GenericConfigurationClass):
                 o_dimensions = self.neurons_per_layer
                 
                 # Add parameters from the weight matrix and bias vector
+                self.actual_capacity += (i_dimensions * o_dimensions) + o_dimensions
+                
+            ##
+            
+        ##
+                  
+        return self.actual_capacity
+    
+    ##
+    
+    #==========================================================================
+    # Define a function to calculate the total number of network parameters for
+    # a siren network architecture (i.e. layer dimensions/neurons)
+    
+    # Note - total_layers is '+2' because the first sine layer, which is needed
+    # to make sure that the residual tensors are of the same shape, and because 
+    # the total_layers actually means "total blocks" in reality.
+    
+    # The network structure can be summarised as follows:
+    # [input_layer      -> sine_layer] + 
+    # [sine_layer/block -> sine_block] +
+    # [sine_block       -> output_layer]  
+    
+    def GetNetworkCapacitySIREN(self):    
+        
+        # Determine the number of inter-layer operations (i.e. total layers)
+        self.total_layers = self.hidden_layers + 2     
+                  
+        # Set the total number of parameters to zero
+        self.actual_capacity = 0                                                         
+          
+        #Iterate through each layer in the network (including input/output)
+        for layer in np.arange(self.total_layers):
+          
+            # [input_layer -> hidden_layer]
+            if (layer==0):                             
+                
+                # Determine the input and output dimensions of each layer
+                if (self.frequencies > 0):
+                    i_dimensions = self.i_dimensions * self.frequencies * 2
+                else:
+                    i_dimensions = self.i_dimensions
+                ##
+                      
+                o_dimensions = self.neurons_per_layer
+                
+                # Add parameters from the weight matrix and bias vector
+                self.actual_capacity += (i_dimensions * o_dimensions) + o_dimensions
+                  
+            ##                
+          
+            # [hidden_layer -> output_layer]
+            elif (layer==self.total_layers-1):     
+    
+                # Determine the input and output dimensions of each layer
+                i_dimensions = self.neurons_per_layer
+                o_dimensions = self.o_dimensions
+                
+                # Add parameters from the weight matrix and bias vector
+                self.actual_capacity += (i_dimensions * o_dimensions) + o_dimensions
+                  
+            ##
+          
+            # [hidden_layer -> hidden_layer]
+            else:                         
+                
+                # Determine the input and output dimensions of each layer    
+                i_dimensions = self.neurons_per_layer                          
+                o_dimensions = self.neurons_per_layer
+                
+                # Add parameters from 1st weight matrix and bias vector
+                self.actual_capacity += (i_dimensions * o_dimensions) + o_dimensions
+                
+                # Add parameters from 2nd weight matrix and bias vector
                 self.actual_capacity += (i_dimensions * o_dimensions) + o_dimensions
                 
             ##

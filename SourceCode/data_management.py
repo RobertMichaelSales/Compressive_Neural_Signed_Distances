@@ -3,10 +3,11 @@
 #==============================================================================
 # Import libraries and set flags
 
-import trimesh
+import trimesh, io
 import numpy as np
 import tensorflow as tf
 from pyevtk.hl import gridToVTK
+from PIL import Image
 
 #==============================================================================
 
@@ -231,7 +232,8 @@ def MakeMeshDataset(mesh,batch_size,sample_method,dataset_size,save_filepath,sho
     if show:
         mesh_data.mesh.visual.face_colors = [255,0,0,128]
         points = trimesh.PointCloud(vertices=mesh_data.sample_points_3d,colors=[0,0,255,128])
-        trimesh.Scene([points,mesh_data.mesh]).show(line_settings={'point_size':0.5,})
+        scene = trimesh.Scene([points,mesh_data.mesh])
+        scene.show(flags={'wireframe':True},line_settings={'line_width':2.0,'point_size':0.5,})
     ##
     
     return dataset
@@ -273,9 +275,10 @@ def LoadMeshDataset(mesh,batch_size,sample_method,dataset_size,load_filepath,sho
     if show:
         mesh_data.mesh.visual.face_colors = [255,0,0,128]
         points = trimesh.PointCloud(vertices=mesh_data.sample_points_3d,colors=[0,0,255,128])
-        trimesh.Scene([points,mesh_data.mesh]).show(flags={'wireframe':True},line_settings={'line_width':2.0,'point_size':0.5,})
+        scene = trimesh.Scene([points,mesh_data.mesh])
+        scene.show(flags={'wireframe':True},line_settings={'line_width':2.0,'point_size':0.5,})
     ##
-    
+        
     return dataset
 
 ##
@@ -583,7 +586,8 @@ def MakeGridDataset(mesh,batch_size,resolution,bbox_scale,save_filepath,show=Fal
     if show:
         grid_data.mesh.visual.face_colors = [255,0,0,128]
         points = trimesh.PointCloud(vertices=grid_data.sample_points_3d,colors=[0,0,255,128])
-        trimesh.Scene([points,grid_data.mesh]).show(line_settings={'point_size':0.5,})
+        scene = trimesh.Scene([points,grid_data.mesh])
+        scene.show(flags={'wireframe':True},line_settings={'line_width':2.0,'point_size':0.5,})
     ##
     
     return dataset
@@ -631,6 +635,36 @@ def LoadGridDataset(mesh,batch_size,resolution,bbox_scale,load_filepath,show=Fal
 
 ##
     
+#==============================================================================
+
+def LoadTrimesh(mesh_filepath,normalise):
+    
+    mesh = trimesh.load(mesh_filepath)
+    
+    if normalise:
+    
+        original_centre = np.array(mesh.bounding_sphere.center)
+           
+        mesh = trimesh.Trimesh(vertices=(mesh.vertices-original_centre),faces=mesh.faces)
+        
+        original_radius = np.cbrt((3*mesh.bounding_sphere.volume)/(4*np.pi))
+        
+        mesh = trimesh.Trimesh(vertices=(mesh.vertices/original_radius),faces=mesh.faces)
+        
+    else:
+        
+        original_centre = np.array([0.0,0.0,0.0])
+        
+        mesh = trimesh.Trimesh(vertices=(mesh.vertices-original_centre),faces=mesh.faces)
+        
+        original_radius = 1.0
+        
+        mesh = trimesh.Trimesh(vertices=(mesh.vertices/original_radius),faces=mesh.faces)
+        
+    ##
+
+    return mesh,original_centre,original_radius
+
 #==============================================================================
 
 def ProgressBar(current,end):

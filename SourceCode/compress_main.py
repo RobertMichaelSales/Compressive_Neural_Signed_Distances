@@ -13,8 +13,8 @@ import tensorflow as tf
 #==============================================================================
 # Import user-defined libraries 
 
-from data_management         import LoadMeshDataset,MakeMeshDataset,LoadGridDataset,MakeGridDataset,SaveData
-from network_model           import ConstructNetwork
+from data_management         import LoadMeshDataset,MakeMeshDataset,LoadGridDataset,MakeGridDataset,LoadTrimesh,SaveData
+from network_model           import ConstructNetworkBASIC,ConstructNetworkSIREN
 from network_encoder         import EncodeArchitecture, EncodeParameters
 from configuration_classes   import GenericConfigurationClass,NetworkConfigurationClass
 from compress_utilities      import TrainStep,GetLearningRate,MeanAbsoluteErrorMetric,Logger
@@ -67,7 +67,8 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
 
     # Load the input mesh file using the 'trimesh' package    
     print("\n{:30}{}".format("Loaded Mesh:",dataset_config.mesh_filepath.split("/")[-1]))
-    mesh = trimesh.load(dataset_config.mesh_filepath)
+    print("\n{:30}{}".format("Normalising:",network_config.normalise))
+    mesh,original_centre,original_radius = LoadTrimesh(mesh_filepath=dataset_config.mesh_filepath,normalise=network_config.normalise)
     
     # Check if the mesh is 'watertight' for computing SDFs
     if mesh.is_watertight:
@@ -83,8 +84,8 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
         
     # Define mesh and grid dataset paths, from base path directory
     base_data_path = os.path.splitext(dataset_config.mesh_filepath)[0]
-    mesh_data_path = base_data_path + "_mesh_[{:}]_[{:}].npy".format(training_config.sample_method,training_config.dataset_size)
-    grid_data_path = base_data_path + "_grid_[{:}]_[{:}].npy".format(training_config.grid_resolution,training_config.bbox_scale)
+    mesh_data_path = base_data_path + "_mesh_({:})_({:})_({:}).npy".format(training_config.sample_method,training_config.dataset_size,"NORM" if network_config.normalise else "ORIG")
+    grid_data_path = base_data_path + "_grid_({:})_({:})_({:}).npy".format(training_config.grid_resolution,training_config.bbox_scale,"NORM" if network_config.normalise else "ORIG")
     
     show = runtime_config.visualise_mesh_dataset
         
@@ -124,8 +125,17 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     network_config.GenerateStructure(i_dimensions=mesh_dataset.i_dimensions,o_dimensions=mesh_dataset.o_dimensions,original_volume_size=dataset_config.original_volume_size)    
     
     # Build SquashSDF from the network configuration information
-    SquashSDF = ConstructNetwork(layer_dimensions=network_config.layer_dimensions,frequencies=network_config.frequencies,activation=network_config.activation)
-                      
+    if network_config.use_siren:
+        SquashSDF = ConstructNetworkSIREN(layer_dimensions=network_config.layer_dimensions,frequencies=network_config.frequencies,activation=network_config.activation)    
+    else:
+        SquashSDF = ConstructNetworkBASIC(layer_dimensions=network_config.layer_dimensions,frequencies=network_config.frequencies,activation=network_config.activation)    
+    ##
+    
+    # Check the number of trainable parameters match what we are expecting
+    if not ((np.sum([np.prod(x.shape) for x in SquashSDF.get_weights()])) == network_config.actual_capacity):
+        raise AssertionError("Number of trainable parameters does not match 'network_config.actual_capacity'")
+    ##
+    
     # Set a training optimiser
     optimiser = tf.keras.optimizers.Adam()
     
@@ -364,8 +374,7 @@ if __name__=="__main__":
         with open(checkpoint_filename, mode='w'): pass
 
     else: print("Checkpoint file '{}' already exists: skipping.".format(checkpoint_filename))
-        
+       
 else: pass
-
 
 #==============================================================================

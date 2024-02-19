@@ -11,16 +11,16 @@ import numpy as np
 #==============================================================================
 # Import user-defined libraries 
 
-from SourceCode.data_management import MakeMeshDataset,MakeGridDataset
+from SourceCode.data_management import MakeMeshDataset,MakeGridDataset,LoadTrimesh
 
 #==============================================================================
 
-def Precompute_Mesh_SDF(mesh_filepath,dataset_size,batch_size,sample_method,save_filepath):
+def Precompute_Mesh_SDF(mesh_filepath,dataset_size,batch_size,sample_method,normalise,save_filepath):
         
     # Load the input mesh file using the 'trimesh' package    
     print("\n{:30}{}".format("Loaded Mesh:",mesh_filepath.split("/")[-1]))
     mesh_obj_name = os.path.splitext(mesh_filepath.split("/")[-1])[0]
-    mesh = trimesh.load(mesh_filepath)
+    mesh,original_centre,original_radius = LoadTrimesh(mesh_filepath=mesh_filepath,normalise=normalise)
     
     # Check if the mesh is 'watertight' for computing SDFs
     if mesh.is_watertight:
@@ -32,7 +32,7 @@ def Precompute_Mesh_SDF(mesh_filepath,dataset_size,batch_size,sample_method,save
        
     # Define mesh dataset path, make output path directory
     if not os.path.exists(save_filepath): os.makedirs(save_filepath) 
-    save_mesh_data_path = os.path.join(save_filepath,"{:}_mesh_[{:}]_[{:}].npy".format(mesh_obj_name,sample_method,dataset_size))   
+    save_mesh_data_path = os.path.join(save_filepath,"{:}_mesh_({:})_({:})_({:}).npy".format(mesh_obj_name,sample_method,dataset_size,"NORM" if normalise else "ORIG"))   
         
     # Make mesh dataset to supply coordinates and signed distances 
     if os.path.exists(save_mesh_data_path):
@@ -48,12 +48,12 @@ def Precompute_Mesh_SDF(mesh_filepath,dataset_size,batch_size,sample_method,save
 
 #==============================================================================
 
-def Precompute_Grid_SDF(mesh_filepath,grid_resolution,batch_size,bbox_scale,save_filepath):
+def Precompute_Grid_SDF(mesh_filepath,grid_resolution,batch_size,bbox_scale,normalise,save_filepath):
         
     # Load the input mesh file using the 'trimesh' package    
     print("\n{:30}{}".format("Loaded Mesh:",mesh_filepath.split("/")[-1]))
     mesh_obj_name = os.path.splitext(mesh_filepath.split("/")[-1])[0]
-    mesh = trimesh.load(mesh_filepath)
+    mesh,original_centre,original_radius = LoadTrimesh(mesh_filepath=mesh_filepath,normalise=normalise)
     
     # Check if the mesh is 'watertight' for computing SDFs
     if mesh.is_watertight:
@@ -65,7 +65,7 @@ def Precompute_Grid_SDF(mesh_filepath,grid_resolution,batch_size,bbox_scale,save
        
     # Define mesh dataset path, make output path directory
     if not os.path.exists(save_filepath): os.makedirs(save_filepath) 
-    save_grid_data_path = os.path.join(save_filepath,"{:}_grid_[{:}]_[{:}].npy".format(mesh_obj_name,grid_resolution,bbox_scale))
+    save_grid_data_path = os.path.join(save_filepath,"{:}_grid_({:})_({:})_({:}).npy".format(mesh_obj_name,grid_resolution,bbox_scale,"NORM" if normalise else "ORIG"))    
     
     # Make mesh dataset to supply coordinates and signed distances 
     if os.path.exists(save_grid_data_path):
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     ##
     
     config_filepaths = glob.glob("/Data/SDF_Compression_Datasets/armadillo/armadillo_config.json")
-            
+    
     dataset_sizes = [1e6]
     
     sample_methods = ["vertice"]
@@ -99,39 +99,43 @@ if __name__ == "__main__":
     
     for config_filepath in config_filepaths:
         
-        # DATA
+        for normalise in [True,False]:
         
-        with open(config_filepath) as config_file: load_mesh_filepath = json.load(config_file)["mesh_filepath"]
-        
-        save_filepath = os.path.join("/",*load_mesh_filepath.split("/")[:-1])
-        
-        # MESH
-        
-        for dataset_size in dataset_sizes:
+            # DATA
             
-            for sample_method in sample_methods:
+            with open(config_filepath) as config_file: load_mesh_filepath = json.load(config_file)["mesh_filepath"]
             
-                Precompute_Mesh_SDF(mesh_filepath=load_mesh_filepath,dataset_size=int(dataset_size),batch_size=1024,sample_method=sample_method,save_filepath=save_filepath)
+            save_filepath = os.path.join("/",*load_mesh_filepath.split("/")[:-1])
+            
+            # MESH
+            
+            for dataset_size in dataset_sizes:
+                
+                for sample_method in sample_methods:
+                
+                    Precompute_Mesh_SDF(mesh_filepath=load_mesh_filepath,dataset_size=int(dataset_size),batch_size=1024,sample_method=sample_method,normalise=normalise,save_filepath=save_filepath)
+                    
+                ##
                 
             ##
             
-        ##
-        
-        print("\n")
-        
-        # GRID
-        
-        for bbox_scale in bbox_scales:
+            print("\n")
             
-            for grid_resolution in grid_resolutions:
+            # GRID
+            
+            for bbox_scale in bbox_scales:
                 
-                Precompute_Grid_SDF(mesh_filepath=load_mesh_filepath,grid_resolution=int(grid_resolution),batch_size=1024,bbox_scale=bbox_scale,save_filepath=save_filepath)
+                for grid_resolution in grid_resolutions:
+                    
+                    Precompute_Grid_SDF(mesh_filepath=load_mesh_filepath,grid_resolution=int(grid_resolution),batch_size=1024,bbox_scale=bbox_scale,normalise=normalise,save_filepath=save_filepath)
+                    
+                ##
                 
             ##
+        
+            print("\n")
             
         ##
-        
-        print("\n")
     
     ##
     
