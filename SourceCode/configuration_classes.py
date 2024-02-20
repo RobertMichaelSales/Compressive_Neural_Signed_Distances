@@ -86,34 +86,50 @@ class NetworkConfigurationClass(GenericConfigurationClass):
     # dimensions, output dimensions and input size.
     
     def GenerateStructure(self,i_dimensions,o_dimensions,original_volume_size):
-                
+            
+        # Assert that self.network_architecture is one of the accepted options
+        if (self.network_architecture.upper() not in ["BASIC","SIREN"]):
+            raise AssertionError("Network arcitecture 'network_config.network_architecture' must be in '[BASIC, SIREN]'")
+        ##
+        
         # Extract the useful internal parameters from the 'input_data' object
         self.i_dimensions = i_dimensions
         self.o_dimensions = o_dimensions
         self.original_volume_size = original_volume_size
         
-        if self.use_siren:
-            self.GetNetworkCapacity = self.GetNetworkCapacitySIREN
-            print("\n{:30}{:}".format("Network Architecture:","SIREN"))
-        else:
-            self.GetNetworkCapacity = self.GetNetworkCapacityBASIC
-            print("\n{:30}{:}".format("Network Architecture:","BASIC"))
-        ##
-
         # Compute the network's target capacity
         self.target_capacity = int(self.original_volume_size/self.target_compression_ratio)
         
-        # Compute the widths of hidden layers
-        self.neurons_per_layer = self.GetNeuronsPerLayer() 
+        # If BASIC then calculate GetNetworkCapacityBASIC accordingly
+        if (self.network_architecture.upper() == "BASIC"):
+            
+            # Compute the widths of hidden layers
+            self.neurons_per_layer = self.GetNeuronsPerLayerBASIC() 
+            
+            # Compute the network's total capacity
+            self.actual_capacity = self.GetNetworkCapacityBASIC()
+            
+        ##
         
-        # Compute the network's total capacity
-        self.actual_capacity = self.GetNetworkCapacity()
-        
+        # If SIREN then calculate GetNetworkCapacitySIREN accordingly
+        if (self.network_architecture.upper() == "SIREN"):
+            
+            # Compute the widths of hidden layers
+            self.neurons_per_layer = self.GetNeuronsPerLayerSIREN() 
+            
+            # Compute the network's total capacity
+            self.actual_capacity = self.GetNetworkCapacitySIREN()
+            
+        ##
+
         # Compute the network's actual compression ratio
         self.actual_compression_ratio = self.original_volume_size/self.actual_capacity
         
         # Write the network architecture as a list of layer dimensions
         self.layer_dimensions = [self.i_dimensions] + ([self.neurons_per_layer]*self.hidden_layers) + [self.o_dimensions]
+        
+        # Print the network architecture: SIREN, BASIC
+        print("\n{:30}'{}'".format("Network Architecture:",self.network_architecture))
         
         # Print the network's target compression ratio
         print("\n{:30}{:.2f}".format("Target compression ratio:",self.target_compression_ratio))
@@ -135,13 +151,13 @@ class NetworkConfigurationClass(GenericConfigurationClass):
     # Define a function to compute the minimum number of neurons needed by each 
     # layer in order to achieve (just exceed) the target compression ratio
 
-    def GetNeuronsPerLayer(self):
+    def GetNeuronsPerLayerBASIC(self):
       
         # Start searching from the minimum of 1 neuron per layer
         self.neurons_per_layer = int(self.minimum_neurons_per_layer)
-          
+                
         # Incriment neurons until the network capacity exceeds the target size
-        while (self.GetNetworkCapacity() < self.target_capacity):
+        while (self.GetNetworkCapacityBASIC() < self.target_capacity):
             
             self.neurons_per_layer = self.neurons_per_layer + 1
             
@@ -218,6 +234,29 @@ class NetworkConfigurationClass(GenericConfigurationClass):
         ##
                   
         return self.actual_capacity
+    
+    ##
+    
+    #==========================================================================
+    # Define a function to compute the minimum number of neurons needed by each 
+    # layer in order to achieve (just exceed) the target compression ratio
+
+    def GetNeuronsPerLayerSIREN(self):
+      
+        # Start searching from the minimum of 1 neuron per layer
+        self.neurons_per_layer = int(self.minimum_neurons_per_layer)
+                
+        # Incriment neurons until the network capacity exceeds the target size
+        while (self.GetNetworkCapacitySIREN() < self.target_capacity):
+            
+            self.neurons_per_layer = self.neurons_per_layer + 1
+            
+        ##
+          
+        # Determine the first neuron count that exceeds the target compression
+        self.neurons_per_layer = self.neurons_per_layer - 1
+        
+        return self.neurons_per_layer
     
     ##
     

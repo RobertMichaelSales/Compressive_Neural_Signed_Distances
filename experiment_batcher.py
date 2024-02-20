@@ -18,7 +18,7 @@ if __name__=="__main__":
     
     # Set counter and total
     count = 1
-    total = len(input_dataset_config_paths)*1*1*1*6*1*1*1*2*2
+    total = len(input_dataset_config_paths)*1*1*1*5*1*1*1*2*2
     
     # Iterate through all inputs
     for input_dataset_config_path in input_dataset_config_paths:
@@ -29,7 +29,7 @@ if __name__=="__main__":
                     
                     for batch_size in np.array([1024]):
                         
-                        for frequencies in np.array([0,4,8,12,16,20]):
+                        for frequencies in np.array([0,4,8,12,16]):
                                                                         
                             for hidden_layers in np.array([8]):
                                 
@@ -39,10 +39,10 @@ if __name__=="__main__":
                                         
                                         for normalise in np.array([True,False]):
                                             
-                                            for use_siren in np.array([False]):
+                                            for network_architecture in np.array(["SIREN","BASIC"]):
         
                                                 # Set experiment campaign name
-                                                campaign_name = "EXP({:03d})_TCR({:011.6f})_ILR({:11.9f})_PEF({:03d})_NHL({:03d})_ACT({:})_BPN({:03d})_({:})_({:})".format(experiment_num,compression_ratio,learning_rate,frequencies,hidden_layers,activation,bits_per_neuron,"NORM" if normalise else "ORIG","SIREN" if use_siren else "BASIC") 
+                                                campaign_name = "EXP({:03d})_TCR({:011.6f})_ILR({:11.9f})_PEF({:03d})_NHL({:03d})_ACT({:})_BPN({:03d})_{:}_{:}".format(experiment_num,compression_ratio,learning_rate,frequencies,hidden_layers,activation,bits_per_neuron,network_architecture,"NORM" if normalise else "ORIG") 
                                                                                 
                                                 # Print this experiment number
                                                 print("\n");print("*"*80);print("Experiment {}/{}: '{}'".format(count,total,campaign_name));print("*"*80);print("\n")
@@ -52,25 +52,25 @@ if __name__=="__main__":
                                                 
                                                 # Define the network config
                                                 network_config = {
-                                                    "network_name"              : campaign_name,
+                                                    "network_name"              : str(campaign_name),
                                                     "hidden_layers"             : int(hidden_layers),
                                                     "frequencies"               : int(frequencies),
                                                     "target_compression_ratio"  : float(compression_ratio),
-                                                    "activation"                : "elu",
-                                                    "minimum_neurons_per_layer" : 1,
+                                                    "activation"                : str("elu"),
+                                                    "minimum_neurons_per_layer" : int(1),
                                                     "bits_per_neuron"           : int(bits_per_neuron),
-                                                    "normalise"                 : normalise,
-                                                    "use_siren"                 : use_siren,
+                                                    "normalise"                 : bool(normalise),
+                                                    "network_architecture"      : str(network_architecture)
                                                     }
                                                                        
                                                 # Define the runtime config
                                                 runtime_config = {
-                                                    "print_verbose"             : False,
-                                                    "save_network_flag"         : False,
-                                                    "save_outputs_flag"         : True,
-                                                    "save_results_flag"         : True,
-                                                    "visualise_mesh_dataset"    : False,
-                                                    "visualise_grid_dataset"    : False,
+                                                    "print_verbose"             : bool(False),
+                                                    "save_network_flag"         : bool(False),
+                                                    "save_outputs_flag"         : bool(True),
+                                                    "save_results_flag"         : bool(True),
+                                                    "visualise_mesh_dataset"    : bool(False),
+                                                    "visualise_grid_dataset"    : bool(False),
                                                     }
                                                 
                                                 # Define the training config
@@ -80,7 +80,7 @@ if __name__=="__main__":
                                                     "epochs"                    : int(100),
                                                     "half_life"                 : int(5),     
                                                     "dataset_size"              : int(1e6),
-                                                    "sample_method"             : "vertice",
+                                                    "sample_method"             : str("vertice"),
                                                     "grid_resolution"           : int(64),
                                                     "bbox_scale"                : float(1.1),
                                                     }            

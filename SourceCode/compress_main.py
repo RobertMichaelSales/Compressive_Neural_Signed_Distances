@@ -124,11 +124,14 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     # Generate the network structure based on the input dimensions
     network_config.GenerateStructure(i_dimensions=mesh_dataset.i_dimensions,o_dimensions=mesh_dataset.o_dimensions,original_volume_size=dataset_config.original_volume_size)    
     
-    # Build SquashSDF from the network configuration information
-    if network_config.use_siren:
-        SquashSDF = ConstructNetworkSIREN(layer_dimensions=network_config.layer_dimensions,frequencies=network_config.frequencies,activation=network_config.activation)    
-    else:
+    # If BASIC then build SquashSDF from the BASIC network configuration
+    if (network_config.network_architecture.upper() == "BASIC"):
         SquashSDF = ConstructNetworkBASIC(layer_dimensions=network_config.layer_dimensions,frequencies=network_config.frequencies,activation=network_config.activation)    
+    ##
+    
+    # If SIREN then build SquashSDF from the SIREN network configuration
+    if (network_config.network_architecture.upper() == "SIREN"):
+        SquashSDF = ConstructNetworkSIREN(layer_dimensions=network_config.layer_dimensions,frequencies=network_config.frequencies,activation=network_config.activation)    
     ##
     
     # Check the number of trainable parameters match what we are expecting
@@ -217,19 +220,37 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     print("\n{:30}{:.2f} seconds".format("Training duration:",training_time))        
     
     #==========================================================================
+    # Evaluate outputs   
+    
+    raise NotImplementedError("NEEDS FINISHING, compress_main.py, line 255")    
+    '''
+    
+    # Generate the pred validation SDF (mesh)
+    pred_signed_distances_mesh = SquashSDF.predict(x=mesh_dataset.sample_points_3d,batch_size=training_config.batch_size,verbose="1")
+    
+    # Re-shape the true validation SDF (mesh)
+    true_signed_distances_mesh = mesh_dataset.signed_distances.numpy()
+    
+    # Compute the validation loss #1/2 (mesh)
+    print("{:30}{:.7f}".format("Validation Error:",np.mean(np.abs(np.subtract(true_signed_distances_mesh,pred_signed_distances_mesh)))))
+    training_data["validation_error"].append(float(np.mean(np.abs(np.subtract(true_signed_distances_mesh,pred_signed_distances_mesh)))))
+    
+    '''
+    
+    #==========================================================================
     # Finalise outputs   
     
-    # Generate the pred validation SDF 
-    pred_signed_distances = SquashSDF.predict(x=grid_dataset.sample_points_3d,batch_size=training_config.batch_size,verbose="1")
-    pred_signed_distances = np.reshape(a=pred_signed_distances,newshape=((grid_dataset.resolution,)*3+(-1,)),order="C")
+    # Generate the pred validation SDF (grid)
+    pred_signed_distances_grid = SquashSDF.predict(x=grid_dataset.sample_points_3d,batch_size=training_config.batch_size,verbose="1")
+    pred_signed_distances_grid = np.reshape(a=pred_signed_distances_grid,newshape=((grid_dataset.resolution,)*3+(-1,)),order="C")
     
-    # Re-shape the true validation SDF
-    true_signed_distances = grid_dataset.signed_distances.numpy()
-    true_signed_distances = np.reshape(a=true_signed_distances,newshape=((grid_dataset.resolution,)*3+(-1,)),order="C")
+    # Re-shape the true validation SDF (grid)
+    true_signed_distances_grid = grid_dataset.signed_distances.numpy()
+    true_signed_distances_grid = np.reshape(a=true_signed_distances_grid,newshape=((grid_dataset.resolution,)*3+(-1,)),order="C")
 
-    # Compute the validation loss
-    print("{:30}{:.7f}".format("Validation Error:",np.mean(np.abs(np.subtract(true_signed_distances,pred_signed_distances)))))
-    training_data["validation_error"].append(float(np.mean(np.abs(np.subtract(true_signed_distances,pred_signed_distances)))))
+    # Compute the validation loss #1/2 (grid)
+    print("{:30}{:.7f}".format("Validation Error:",np.mean(np.abs(np.subtract(true_signed_distances_grid,pred_signed_distances_grid)))))
+    training_data["validation_error"].append(float(np.mean(np.abs(np.subtract(true_signed_distances_grid,pred_signed_distances_grid)))))
     
     # Pack the configuration dictionaries into just one
     combined_config_dict = (network_config | training_config | runtime_config | dataset_config)
@@ -264,12 +285,12 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
         
         # Save true grid and signed distances to ".npy" and ".vtk" files
         output_data_path = os.path.join(o_filepath,"true_sdf")
-        SaveData(output_data_path=output_data_path,sample_points_3d=sample_points_3d,signed_distances=true_signed_distances,reverse_normalise=False)
+        SaveData(output_data_path=output_data_path,sample_points_3d=sample_points_3d,signed_distances=true_signed_distances_grid,reverse_normalise=False)
         print("{:30}{}.{{npy,vts}}".format("Saved output files as:",output_data_path.split("/")[-1])) 
         
         # Save pred grid and signed distances to ".npy" and ".vtk" files
         output_data_path = os.path.join(o_filepath,"pred_sdf")
-        SaveData(output_data_path=output_data_path,sample_points_3d=sample_points_3d,signed_distances=pred_signed_distances,reverse_normalise=False)
+        SaveData(output_data_path=output_data_path,sample_points_3d=sample_points_3d,signed_distances=pred_signed_distances_grid,reverse_normalise=False)
         print("{:30}{}.{{npy,vts}}".format("Saved output files as:",output_data_path.split("/")[-1]))        
     else: pass    
     
