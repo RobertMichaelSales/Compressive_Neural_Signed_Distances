@@ -98,7 +98,7 @@ class NetworkConfigurationClass(GenericConfigurationClass):
         self.original_volume_size = original_volume_size
         
         # Compute the network's target capacity
-        self.target_capacity = int(self.original_volume_size/self.target_compression_ratio)
+        self.target_capacity = int((self.original_volume_size*self.i_dimensions)/self.target_compression_ratio)
         
         # If BASIC then calculate GetNetworkCapacityBASIC accordingly
         if (self.network_architecture.upper() == "BASIC"):
@@ -123,7 +123,7 @@ class NetworkConfigurationClass(GenericConfigurationClass):
         ##
 
         # Compute the network's actual compression ratio
-        self.actual_compression_ratio = self.original_volume_size/self.actual_capacity
+        self.actual_compression_ratio = float((self.original_volume_size*self.i_dimensions)/self.actual_capacity)
         
         # Write the network architecture as a list of layer dimensions
         self.layer_dimensions = [self.i_dimensions] + ([self.neurons_per_layer]*self.hidden_layers) + [self.o_dimensions]

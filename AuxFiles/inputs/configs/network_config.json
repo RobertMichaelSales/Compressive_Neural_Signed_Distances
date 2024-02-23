@@ -7,5 +7,5 @@
     "minimum_neurons_per_layer": 1,
     "bits_per_neuron": 32,
     "normalise": true,
-    "use_siren": false
+    "network_architecture": "SIREN"
 }

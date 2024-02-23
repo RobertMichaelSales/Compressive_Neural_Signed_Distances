@@ -3,7 +3,7 @@
 #==============================================================================
 # Import libraries
 
-import os, json, sys, glob
+import os, json, glob
 import numpy as np
 
 #==============================================================================
@@ -11,14 +11,14 @@ import numpy as np
 if __name__=="__main__": 
 
     # Set input data config options
-    input_dataset_config_paths = sorted(glob.glob("/Data/SDF_Compression_Datasets/armadillo/armadillo_config.json"))
+    input_dataset_config_paths = sorted(glob.glob("/Data/SDF_Compression_Datasets/turbostream_*/turbostream_*_config.json"))
             
     # Set experiment number
-    experiment_num = 1
+    experiment_num = 3
     
     # Set counter and total
     count = 1
-    total = len(input_dataset_config_paths)*1*1*1*5*1*1*1*2*2
+    total = len(input_dataset_config_paths)*1*1*1*1*1*1*1*1*2
     
     # Iterate through all inputs
     for input_dataset_config_path in input_dataset_config_paths:
@@ -29,7 +29,7 @@ if __name__=="__main__":
                     
                     for batch_size in np.array([1024]):
                         
-                        for frequencies in np.array([0,4,8,12,16]):
+                        for frequencies in np.array([10]):
                                                                         
                             for hidden_layers in np.array([8]):
                                 
@@ -37,7 +37,7 @@ if __name__=="__main__":
                                     
                                     for bits_per_neuron in np.array([32]):
                                         
-                                        for normalise in np.array([True,False]):
+                                        for normalise in np.array([True]):
                                             
                                             for network_architecture in np.array(["SIREN","BASIC"]):
         
@@ -81,7 +81,7 @@ if __name__=="__main__":
                                                     "half_life"                 : int(5),     
                                                     "dataset_size"              : int(1e6),
                                                     "sample_method"             : str("vertice"),
-                                                    "grid_resolution"           : int(64),
+                                                    "grid_resolution"           : int(128),
                                                     "bbox_scale"                : float(1.1),
                                                     }            
                                                 

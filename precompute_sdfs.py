@@ -1,12 +1,10 @@
-""" Created: 29.01.2024  \\  Updated: 07.02.2024  \\   Author: Robert Sales """
+""" Created: 29.01.2024  \\  Updated: 21.02.2024  \\   Author: Robert Sales """
 
 #==============================================================================
 
-import os, time, json, psutil, sys, gc, datetime, glob, trimesh
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-gc.enable()
-
+import os, json, glob, trimesh
 import numpy as np
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 #==============================================================================
 # Import user-defined libraries 
@@ -15,7 +13,7 @@ from SourceCode.data_management import MakeMeshDataset,MakeGridDataset,LoadTrime
 
 #==============================================================================
 
-def Precompute_Mesh_SDF(mesh_filepath,dataset_size,batch_size,sample_method,normalise,save_filepath):
+def PrecomputeMeshSDF(mesh_filepath,dataset_size,batch_size,sample_method,normalise,save_filepath):
         
     # Load the input mesh file using the 'trimesh' package    
     print("\n{:30}{}".format("Loaded Mesh:",mesh_filepath.split("/")[-1]))
@@ -48,7 +46,7 @@ def Precompute_Mesh_SDF(mesh_filepath,dataset_size,batch_size,sample_method,norm
 
 #==============================================================================
 
-def Precompute_Grid_SDF(mesh_filepath,grid_resolution,batch_size,bbox_scale,normalise,save_filepath):
+def PrecomputeGridSDF(mesh_filepath,grid_resolution,batch_size,bbox_scale,normalise,save_filepath):
         
     # Load the input mesh file using the 'trimesh' package    
     print("\n{:30}{}".format("Loaded Mesh:",mesh_filepath.split("/")[-1]))
@@ -79,13 +77,59 @@ def Precompute_Grid_SDF(mesh_filepath,grid_resolution,batch_size,bbox_scale,norm
 
 ##
 
+#==============================================================================
+
+def ViewPrecomputedMesh(mesh_filepath,dataset_size,batch_size,sample_method,normalise):
+
+    mesh_obj_name = os.path.splitext(mesh_filepath.split("/")[-1])[0]
+    load_filepath = os.path.join(os.path.dirname(mesh_filepath),"{:}_mesh_({:})_({:})_({:}).npy".format(mesh_obj_name,sample_method,dataset_size,"NORM" if normalise else "ORIG"))
+
+    mesh,original_centre,original_radius = LoadTrimesh(mesh_filepath=mesh_filepath,normalise=normalise)
+
+    sample_points_3d = np.load(load_filepath)[:,:-1]
+    
+    mesh.visual.face_colors = [255,0,0,128]
+    
+    points = trimesh.PointCloud(vertices=sample_points_3d,colors=[0,0,255,128])
+    
+    scene = trimesh.Scene([points,mesh])
+    
+    scene.show(flags={'wireframe':True},line_settings={'line_width':2.0,'point_size':0.5,})
+    
+    return None
+
+##
+
+#==============================================================================
+
+def ViewPrecomputedGrid(mesh_filepath,grid_resolution,batch_size,bbox_scale,normalise):
+
+    mesh_obj_name = os.path.splitext(mesh_filepath.split("/")[-1])[0]
+    load_filepath = os.path.join(os.path.dirname(mesh_filepath),"{:}_grid_({:})_({:})_({:}).npy".format(mesh_obj_name,grid_resolution,bbox_scale,"NORM" if normalise else "ORIG"))
+
+    mesh,original_centre,original_radius = LoadTrimesh(mesh_filepath=mesh_filepath,normalise=normalise)
+
+    sample_points_3d = np.load(load_filepath)[:,:-1]
+    
+    mesh.visual.face_colors = [255,0,0,128]
+    
+    points = trimesh.PointCloud(vertices=sample_points_3d,colors=[0,0,255,128])
+    
+    scene = trimesh.Scene([points,mesh])
+    
+    scene.show(flags={'wireframe':True},line_settings={'line_width':2.0,'point_size':0.5,})
+    
+    return None
+
+##
+
 #==============================================================================    
 
 if __name__ == "__main__":
         
     ##
     
-    config_filepaths = glob.glob("/Data/SDF_Compression_Datasets/armadillo/armadillo_config.json")
+    config_filepaths = glob.glob("/Data/SDF_Compression_Datasets/turbostream_*/*_config.json")
     
     dataset_sizes = [1e6]
     
@@ -93,13 +137,13 @@ if __name__ == "__main__":
     
     bbox_scales = [1.1]
     
-    grid_resolutions = [64]
+    grid_resolutions = [128]
     
     ##
     
     for config_filepath in config_filepaths:
         
-        for normalise in [True,False]:
+        for normalise in [True]:
         
             # DATA
             
@@ -113,7 +157,7 @@ if __name__ == "__main__":
                 
                 for sample_method in sample_methods:
                 
-                    Precompute_Mesh_SDF(mesh_filepath=load_mesh_filepath,dataset_size=int(dataset_size),batch_size=1024,sample_method=sample_method,normalise=normalise,save_filepath=save_filepath)
+                    PrecomputeMeshSDF(mesh_filepath=load_mesh_filepath,dataset_size=int(dataset_size),batch_size=1024,sample_method=sample_method,normalise=normalise,save_filepath=save_filepath)
                     
                 ##
                 
@@ -127,7 +171,7 @@ if __name__ == "__main__":
                 
                 for grid_resolution in grid_resolutions:
                     
-                    Precompute_Grid_SDF(mesh_filepath=load_mesh_filepath,grid_resolution=int(grid_resolution),batch_size=1024,bbox_scale=bbox_scale,normalise=normalise,save_filepath=save_filepath)
+                    PrecomputeGridSDF(mesh_filepath=load_mesh_filepath,grid_resolution=int(grid_resolution),batch_size=1024,bbox_scale=bbox_scale,normalise=normalise,save_filepath=save_filepath)
                     
                 ##
                 
@@ -143,4 +187,24 @@ if __name__ == "__main__":
     
 else: pass
 
+#==============================================================================
+## Test 1
+'''
+mesh_filepath = "/Data/SDF_Compression_Datasets/turbostream_rotor/turbostream_rotor.obj"
+dataset_size = int(1e6)
+batch_size = int(1024)
+sample_method = str("vertice")
+normalise = True
+ViewPrecomputedMesh(mesh_filepath,dataset_size,batch_size,sample_method,normalise)
+'''
+#==============================================================================
+## Test 2
+'''
+mesh_filepath = "/Data/SDF_Compression_Datasets/turbostream_rotor/turbostream_rotor.obj"
+grid_resolution = int(64)
+batch_size = 1024
+bbox_scale = float(1.1)
+normalise = True
+ViewPrecomputedGrid(mesh_filepath,grid_resolution,batch_size,bbox_scale,normalise)
+'''
 #==============================================================================

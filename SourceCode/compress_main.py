@@ -60,6 +60,7 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     
     # Determine whether data exceeds memory and choose how to load the dataset
     dataset_exceeds_memory = (input_file_size > min(available_memory,threshold_memory))
+    print("\n{:30}{}".format("Dataset Exceeds Memory:",dataset_exceeds_memory))
 
     #==========================================================================
     # Initialise i/o 
@@ -221,10 +222,7 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     
     #==========================================================================
     # Evaluate outputs   
-    
-    raise NotImplementedError("NEEDS FINISHING, compress_main.py, line 255")    
-    '''
-    
+        
     # Generate the pred validation SDF (mesh)
     pred_signed_distances_mesh = SquashSDF.predict(x=mesh_dataset.sample_points_3d,batch_size=training_config.batch_size,verbose="1")
     
@@ -233,27 +231,17 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     
     # Compute the validation loss #1/2 (mesh)
     print("{:30}{:.7f}".format("Validation Error:",np.mean(np.abs(np.subtract(true_signed_distances_mesh,pred_signed_distances_mesh)))))
-    training_data["validation_error"].append(float(np.mean(np.abs(np.subtract(true_signed_distances_mesh,pred_signed_distances_mesh)))))
-    
-    '''
-    
-    #==========================================================================
-    # Finalise outputs   
+    training_data["validation_error"].append(float(np.mean(np.abs(np.subtract(true_signed_distances_mesh,pred_signed_distances_mesh)))))   
     
     # Generate the pred validation SDF (grid)
     pred_signed_distances_grid = SquashSDF.predict(x=grid_dataset.sample_points_3d,batch_size=training_config.batch_size,verbose="1")
-    pred_signed_distances_grid = np.reshape(a=pred_signed_distances_grid,newshape=((grid_dataset.resolution,)*3+(-1,)),order="C")
     
     # Re-shape the true validation SDF (grid)
     true_signed_distances_grid = grid_dataset.signed_distances.numpy()
-    true_signed_distances_grid = np.reshape(a=true_signed_distances_grid,newshape=((grid_dataset.resolution,)*3+(-1,)),order="C")
 
     # Compute the validation loss #1/2 (grid)
     print("{:30}{:.7f}".format("Validation Error:",np.mean(np.abs(np.subtract(true_signed_distances_grid,pred_signed_distances_grid)))))
     training_data["validation_error"].append(float(np.mean(np.abs(np.subtract(true_signed_distances_grid,pred_signed_distances_grid)))))
-    
-    # Pack the configuration dictionaries into just one
-    combined_config_dict = (network_config | training_config | runtime_config | dataset_config)
     
     #==========================================================================
     # Save network
@@ -285,10 +273,12 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
         
         # Save true grid and signed distances to ".npy" and ".vtk" files
         output_data_path = os.path.join(o_filepath,"true_sdf")
+        true_signed_distances_grid = np.reshape(a=true_signed_distances_grid,newshape=((grid_dataset.resolution,)*3+(-1,)),order="C")
         SaveData(output_data_path=output_data_path,sample_points_3d=sample_points_3d,signed_distances=true_signed_distances_grid,reverse_normalise=False)
         print("{:30}{}.{{npy,vts}}".format("Saved output files as:",output_data_path.split("/")[-1])) 
         
         # Save pred grid and signed distances to ".npy" and ".vtk" files
+        pred_signed_distances_grid = np.reshape(a=pred_signed_distances_grid,newshape=((grid_dataset.resolution,)*3+(-1,)),order="C")
         output_data_path = os.path.join(o_filepath,"pred_sdf")
         SaveData(output_data_path=output_data_path,sample_points_3d=sample_points_3d,signed_distances=pred_signed_distances_grid,reverse_normalise=False)
         print("{:30}{}.{{npy,vts}}".format("Saved output files as:",output_data_path.split("/")[-1]))        
@@ -296,6 +286,9 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     
     #==========================================================================
     # Save results
+    
+    # Pack the configuration dictionaries into just one
+    combined_config_dict = (network_config | training_config | runtime_config | dataset_config)
     
     if runtime_config.save_results_flag:
         print("-"*80,"\nSAVING RESULTS:")        
