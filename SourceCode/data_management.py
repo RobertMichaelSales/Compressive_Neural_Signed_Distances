@@ -13,11 +13,11 @@ from PIL import Image
 
 class MeshDataset():
     
-    def __init__(self,mesh,batch_size,sample_method,dataset_size):
+    def __init__(self,mesh,sample_size,sample_method,dataset_size):
         
         self.mesh = mesh
         
-        self.batch_size = batch_size
+        self.sample_size = sample_size
         
         self.sample_method = sample_method
         
@@ -29,7 +29,7 @@ class MeshDataset():
         
         self.stdev = 0.10
         
-        self.ratio = 10.0
+        self.ratio = 8.00
         
         self.scale = 60.0
         
@@ -137,19 +137,17 @@ class MeshDataset():
     
     def ImportanceSampler(self,n_samples):
         
-        uniform_points = self.UniformSampler(n_samples=(n_samples*self.ratio))
+        uniform_points,signed_distances = self.UniformSampler(n_samples=n_samples)
         
-        signed_distances = trimesh.proximity.signed_distance(self.mesh,uniform_points)
-
         importance = np.exp(((-self.scale) * np.abs(signed_distances)))
                 
         importance_cdf = np.concatenate(([0],np.cumsum(importance / np.sum(importance))))
         
-        sample_point_indices = np.array(np.searchsorted(a=importance_cdf,v=np.random.rand(n_samples),side="right")-1)
+        sample_point_indices = np.array(np.searchsorted(a=importance_cdf,v=np.random.rand(int(n_samples/self.ratio)),side="right")-1)
         
         sample_points_3d = uniform_points[sample_point_indices,:]
         
-        signed_distances = np.expand_dims(a=signed_distances[sample_point_indices,:],axis=-1)
+        signed_distances = signed_distances[sample_point_indices,:]
         
         return sample_points_3d, signed_distances
     
@@ -166,19 +164,19 @@ class MeshDataset():
         while self.signed_distances.shape[0] < self.dataset_size:
             
             if self.sample_method == "uniform": 
-                sample_points_3d_batch,signed_distances_batch = self.UniformSampler(self.batch_size)
+                sample_points_3d_batch,signed_distances_batch = self.UniformSampler(self.sample_size)
             ##
             
             if self.sample_method == "surface": 
-                sample_points_3d_batch,signed_distances_batch = self.SurfaceSampler(self.batch_size)
+                sample_points_3d_batch,signed_distances_batch = self.SurfaceSampler(self.sample_size)
             ##
             
             if self.sample_method == "vertice": 
-                sample_points_3d_batch,signed_distances_batch = self.VerticeSampler(self.batch_size)
+                sample_points_3d_batch,signed_distances_batch = self.VerticeSampler(self.sample_size)
             ##
             
             if self.sample_method == "importance": 
-                sample_points_3d_batch,signed_distances_batch = self.ImportanceSampler(self.batch_size)
+                sample_points_3d_batch,signed_distances_batch = self.ImportanceSampler(self.sample_size)
             ##
         
             self.sample_points_3d = np.concatenate([self.sample_points_3d,sample_points_3d_batch])
@@ -201,7 +199,7 @@ class MeshDataset():
 
 def MakeMeshDataset(mesh,batch_size,sample_method,dataset_size,save_filepath,show=False):
     
-    mesh_data = MeshDataset(mesh=mesh,batch_size=2048,sample_method=sample_method,dataset_size=dataset_size)
+    mesh_data = MeshDataset(mesh=mesh,sample_size=2048,sample_method=sample_method,dataset_size=dataset_size)
     
     mesh_data.GenerateData()
     
@@ -244,7 +242,7 @@ def MakeMeshDataset(mesh,batch_size,sample_method,dataset_size,save_filepath,sho
 
 def LoadMeshDataset(mesh,batch_size,sample_method,dataset_size,load_filepath,show=False):
     
-    mesh_data = MeshDataset(mesh=mesh,batch_size=2048,sample_method=sample_method,dataset_size=dataset_size)
+    mesh_data = MeshDataset(mesh=mesh,sample_size=2048,sample_method=sample_method,dataset_size=dataset_size)
     
     mesh_data.sample_points_3d = np.load(load_filepath)[:,:-1]
     
@@ -287,11 +285,11 @@ def LoadMeshDataset(mesh,batch_size,sample_method,dataset_size,load_filepath,sho
 
 class MeshDataGenerator():
     
-    def __init__(self,mesh,batch_size,sample_method,dataset_size):
+    def __init__(self,mesh,sample_size,sample_method,dataset_size):
         
         self.mesh = mesh
         
-        self.batch_size = batch_size
+        self.sample_size = sample_size
         
         self.sample_method = sample_method
         
@@ -411,19 +409,17 @@ class MeshDataGenerator():
     
     def ImportanceSampler(self,n_samples):
         
-        uniform_points = self.UniformSampler(n_samples=(n_samples*self.ratio))
+        uniform_points,signed_distances = self.UniformSampler(n_samples=n_samples)
         
-        signed_distances = trimesh.proximity.signed_distance(self.mesh,uniform_points)
-
         importance = np.exp(((-self.scale) * np.abs(signed_distances)))
                 
         importance_cdf = np.concatenate(([0],np.cumsum(importance / np.sum(importance))))
         
-        sample_point_indices = np.array(np.searchsorted(a=importance_cdf,v=np.random.rand(n_samples),side="right")-1)
+        sample_point_indices = np.array(np.searchsorted(a=importance_cdf,v=np.random.rand(int(n_samples/self.ratio)),side="right")-1)
         
         sample_points_3d = uniform_points[sample_point_indices,:]
         
-        signed_distances = np.expand_dims(a=signed_distances[sample_point_indices,:],axis=-1)
+        signed_distances = signed_distances[sample_point_indices,:]
         
         return sample_points_3d, signed_distances
     
@@ -435,22 +431,22 @@ class MeshDataGenerator():
     
     def GenerateBatch(self):
                             
-        for batch in range(int(np.ceil(self.dataset_size/self.batch_size))):
+        for batch in range(int(np.ceil(self.dataset_size/self.sample_size))):
         
             if self.sample_method == "uniform": 
-                sample_points_3d,signed_distances = self.UniformSampler(self.batch_size)
+                sample_points_3d,signed_distances = self.UniformSampler(self.sample_size)
             ##
             
             if self.sample_method == "surface": 
-                sample_points_3d,signed_distances = self.SurfaceSampler(self.batch_size)
+                sample_points_3d,signed_distances = self.SurfaceSampler(self.sample_size)
             ##
             
             if self.sample_method == "vertice": 
-                sample_points_3d,signed_distances = self.VerticeSampler(self.batch_size)
+                sample_points_3d,signed_distances = self.VerticeSampler(self.sample_size)
             ##
             
             if self.sample_method == "importance": 
-                sample_points_3d,signed_distances = self.ImportanceSampler(self.batch_size)
+                sample_points_3d,signed_distances = self.ImportanceSampler(self.sample_size)
             ## 
                     
             yield tf.convert_to_tensor(sample_points_3d.astype("float32")),tf.convert_to_tensor(signed_distances.astype("float32"))
@@ -463,7 +459,7 @@ class MeshDataGenerator():
 
 def MeshDatasetFromGenerator(mesh,batch_size,sample_method,dataset_size):
         
-    data = MeshDataGenerator(mesh=mesh,batch_size=batch_size,sample_method=sample_method,dataset_size=dataset_size)
+    data = MeshDataGenerator(mesh=mesh,sample_size=batch_size,sample_method=sample_method,dataset_size=dataset_size)
     
     output_types = (tf.float32,tf.float32)
     
@@ -488,11 +484,11 @@ def MeshDatasetFromGenerator(mesh,batch_size,sample_method,dataset_size):
 
 class GridDataset():
     
-    def __init__(self,mesh,batch_size,resolution,bbox_scale):
+    def __init__(self,mesh,sample_size,resolution,bbox_scale):
         
         self.mesh = mesh
         
-        self.batch_size = batch_size
+        self.sample_size = sample_size
         
         self.resolution = resolution 
         
@@ -532,11 +528,11 @@ class GridDataset():
         
         self.GenerateGrid()
             
-        number_of_batches = int(np.ceil((self.dataset_size)/self.batch_size))
+        number_of_samples = int(np.ceil((self.dataset_size)/self.sample_size))
         
-        for batch in range(number_of_batches):
+        for sample in range(number_of_samples):
             
-            indices = [self.batch_size*batch, min(self.batch_size*(batch+1),self.dataset_size)]
+            indices = [self.sample_size*sample, min(self.sample_size*(sample+1),self.dataset_size)]
                 
             sample_points_3d_batch = self.sample_points_3d[slice(*indices),:]
             
@@ -544,7 +540,7 @@ class GridDataset():
             
             self.signed_distances[slice(*indices),:] = np.expand_dims(a=signed_distances_batch,axis=-1)
             
-            print(ProgressBar(current=(batch+1),end=number_of_batches),end="")
+            print(ProgressBar(current=(sample+1),end=number_of_samples),end="")
             
         ##
         
@@ -556,7 +552,7 @@ class GridDataset():
 
 def MakeGridDataset(mesh,batch_size,resolution,bbox_scale,save_filepath,show=False): 
     
-    grid_data = GridDataset(mesh=mesh,batch_size=2048,resolution=resolution,bbox_scale=bbox_scale)
+    grid_data = GridDataset(mesh=mesh,sample_size=2048,resolution=resolution,bbox_scale=bbox_scale)
 
     grid_data.GenerateData()
     
@@ -598,7 +594,7 @@ def MakeGridDataset(mesh,batch_size,resolution,bbox_scale,save_filepath,show=Fal
 
 def LoadGridDataset(mesh,batch_size,resolution,bbox_scale,load_filepath,show=False):  
     
-    grid_data = GridDataset(mesh=mesh,batch_size=2048,resolution=resolution,bbox_scale=bbox_scale)
+    grid_data = GridDataset(mesh=mesh,sample_size=2048,resolution=resolution,bbox_scale=bbox_scale)
     
     grid_data.sample_points_3d = np.load(load_filepath)[:,:-1]
     
@@ -708,5 +704,32 @@ def SaveData(output_data_path,sample_points_3d,signed_distances,reverse_normalis
     gridToVTK(output_data_path,*sample_points_3d_list,pointData=signed_distances_dict)
         
     return None
+
+#==============================================================================
+# mesh_filepath = "/Data/SDF_Compression_Datasets/turbostream_domain_0/domain_0_mesh.obj"
+# normalise = True
+
+# mesh,original_centre,original_radius = LoadTrimesh(mesh_filepath=mesh_filepath,normalise=normalise)
+
+# sample_method = "Importance"
+# dataset_size = int(1e5)
+
+# mesh_data = MeshDataset(mesh=mesh,sample_size=2048,sample_method=sample_method,dataset_size=dataset_size)
+
+# # mesh_data.sample_points_3d = np.empty(shape=(0,3))
+# # mesh_data.signed_distances = np.empty(shape=(0,1))
+
+# uniform_points,signed_distances = mesh_data.UniformSampler(n_samples=int(10*mesh_data.ratio))
+
+# importance = np.exp(((-mesh_data.scale) * np.abs(signed_distances)))
+        
+# importance_cdf = np.concatenate(([0],np.cumsum(importance / np.sum(importance))))
+
+# sample_point_indices = np.array(np.searchsorted(a=importance_cdf,v=np.random.rand(10),side="right")-1)
+
+# sample_points_3d = uniform_points[sample_point_indices,:]
+
+# signed_distances = signed_distances[sample_point_indices,:]
+
 
 #==============================================================================

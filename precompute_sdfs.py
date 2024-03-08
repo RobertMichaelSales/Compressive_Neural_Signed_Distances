@@ -1,23 +1,23 @@
-""" Created: 29.01.2024  \\  Updated: 21.02.2024  \\   Author: Robert Sales """
+""" Created: 29.01.2024  \\  Updated: 07.03.2024  \\   Author: Robert Sales """
 
 #==============================================================================
 
-import os, json, glob, trimesh
+import os, json, glob, trimesh, time, sys, datetime
 import numpy as np
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 #==============================================================================
 # Import user-defined libraries 
 
-from SourceCode.data_management import MakeMeshDataset,MakeGridDataset,LoadTrimesh
-
+from SourceCode.data_management    import MakeMeshDataset,MakeGridDataset,LoadTrimesh
+from SourceCode.compress_utilities import Logger
 #==============================================================================
 
 def PrecomputeMeshSDF(mesh_filepath,dataset_size,batch_size,sample_method,normalise,save_filepath):
         
     # Load the input mesh file using the 'trimesh' package    
     print("\n{:30}{}".format("Loaded Mesh:",mesh_filepath.split("/")[-1]))
-    mesh_obj_name = os.path.splitext(mesh_filepath.split("/")[-1])[0]
+    mesh_obj_name = mesh_filepath.split("/")[-1].replace("_mesh.obj","")
     mesh,original_centre,original_radius = LoadTrimesh(mesh_filepath=mesh_filepath,normalise=normalise)
     
     # Check if the mesh is 'watertight' for computing SDFs
@@ -34,10 +34,13 @@ def PrecomputeMeshSDF(mesh_filepath,dataset_size,batch_size,sample_method,normal
         
     # Make mesh dataset to supply coordinates and signed distances 
     if os.path.exists(save_mesh_data_path):
-        print("\n{:30}{}".format("Mesh Dataset Already Exists:","Skipping..."))
+        print("\n{:30}'{}' {}".format("Mesh Dataset Already Exists:",save_mesh_data_path,"Skipping!"))
     else:
-        print("\n{:30}{}".format("Precomputing Mesh Dataset:",save_mesh_data_path))
+        print("\n{:30}'{}'".format("Precomputing Mesh Dataset:",save_mesh_data_path))
+        tick = time.time()
         MakeMeshDataset(mesh=mesh,batch_size=batch_size,sample_method=sample_method,dataset_size=dataset_size,save_filepath=save_mesh_data_path,show=False)        
+        tock = time.time()
+        print("\n{:30}{:.2f}".format("Elapsed Time:",(tock-tick)))
     ##
     
     return None
@@ -50,7 +53,7 @@ def PrecomputeGridSDF(mesh_filepath,grid_resolution,batch_size,bbox_scale,normal
         
     # Load the input mesh file using the 'trimesh' package    
     print("\n{:30}{}".format("Loaded Mesh:",mesh_filepath.split("/")[-1]))
-    mesh_obj_name = os.path.splitext(mesh_filepath.split("/")[-1])[0]
+    mesh_obj_name = mesh_filepath.split("/")[-1].replace("_mesh.obj","")
     mesh,original_centre,original_radius = LoadTrimesh(mesh_filepath=mesh_filepath,normalise=normalise)
     
     # Check if the mesh is 'watertight' for computing SDFs
@@ -67,10 +70,13 @@ def PrecomputeGridSDF(mesh_filepath,grid_resolution,batch_size,bbox_scale,normal
     
     # Make mesh dataset to supply coordinates and signed distances 
     if os.path.exists(save_grid_data_path):
-        print("\n{:30}{}".format("Mesh Dataset Already Exists:","Skipping..."))
+        print("\n{:30}'{}' {}".format("Grid Dataset Already Exists:",save_grid_data_path,"Skipping!"))
     else:
-        print("\n{:30}{}".format("Precomputing Mesh Dataset:",save_grid_data_path))
+        print("\n{:30}{}".format("Precomputing Grid Dataset:",save_grid_data_path))
+        tick = time.time()
         MakeGridDataset(mesh=mesh,batch_size=batch_size,resolution=grid_resolution,bbox_scale=bbox_scale,save_filepath=save_grid_data_path,show=False)        
+        tock = time.time()
+        print("\n{:30}{:.2f}".format("Elapsed Time:",(tock-tick)))
     ##
     
     return None
@@ -126,18 +132,22 @@ def ViewPrecomputedGrid(mesh_filepath,grid_resolution,batch_size,bbox_scale,norm
 #==============================================================================    
 
 if __name__ == "__main__":
-        
+          
+    sys.stdout = Logger(logfile = datetime.datetime.now().strftime("%d-%m-%Y-%H:%M:%S.txt"))   
+    
     ##
     
-    config_filepaths = glob.glob("/Data/SDF_Compression_Datasets/turbostream_*/*_config.json")
+    config_filepaths = sorted(glob.glob("/Data/SDF_Compression_Datasets/turbostream_*/*_config.json"))
     
-    dataset_sizes = [1e6]
+    config_filepaths = [x for x in config_filepaths if "mesh" in x]
     
-    sample_methods = ["vertice"]
+    dataset_sizes = [1e5,1e6]
     
-    bbox_scales = [1.1]
+    sample_methods = ["surface","vertice","importance"]
     
-    grid_resolutions = [128]
+    bbox_scales = [1.25]
+    
+    grid_resolutions = [32,64,128]
     
     ##
     
@@ -156,8 +166,10 @@ if __name__ == "__main__":
             for dataset_size in dataset_sizes:
                 
                 for sample_method in sample_methods:
-                
+                               
                     PrecomputeMeshSDF(mesh_filepath=load_mesh_filepath,dataset_size=int(dataset_size),batch_size=1024,sample_method=sample_method,normalise=normalise,save_filepath=save_filepath)
+                        
+                    print("\n")
                     
                 ##
                 
@@ -170,8 +182,10 @@ if __name__ == "__main__":
             for bbox_scale in bbox_scales:
                 
                 for grid_resolution in grid_resolutions:
-                    
+
                     PrecomputeGridSDF(mesh_filepath=load_mesh_filepath,grid_resolution=int(grid_resolution),batch_size=1024,bbox_scale=bbox_scale,normalise=normalise,save_filepath=save_filepath)
+
+                    print("\n")
                     
                 ##
                 

@@ -1,11 +1,12 @@
 {
-    "network_name": "squashsdf",
+    "network_name": "squashsdf_gauss_00",
     "hidden_layers": 8,
-    "frequencies": 0,
+    "frequencies": 10,
+    "gaussian_stddev": 1.0,
     "target_compression_ratio": 10,
     "activation": "elu",
     "minimum_neurons_per_layer": 1,
     "bits_per_neuron": 32,
     "normalise": true,
-    "network_architecture": "SIREN"
+    "network_architecture": "GAUSS"
 }

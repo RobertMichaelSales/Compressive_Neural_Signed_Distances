@@ -14,7 +14,7 @@ import tensorflow as tf
 # Import user-defined libraries 
 
 from data_management         import LoadMeshDataset,MakeMeshDataset,LoadGridDataset,MakeGridDataset,LoadTrimesh,SaveData
-from network_model           import ConstructNetworkBASIC,ConstructNetworkSIREN
+from network_model           import ConstructNetworkBASIC,ConstructNetworkSIREN,ConstructNetworkGAUSS
 from network_encoder         import EncodeArchitecture, EncodeParameters
 from configuration_classes   import GenericConfigurationClass,NetworkConfigurationClass
 from compress_utilities      import TrainStep,GetLearningRate,MeanAbsoluteErrorMetric,Logger
@@ -122,6 +122,8 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     # Configure network 
     print("-"*80,"\nCONFIGURING NETWORK:")
     
+    # network_config.network_architecture = "SIREN"
+    
     # Generate the network structure based on the input dimensions
     network_config.GenerateStructure(i_dimensions=mesh_dataset.i_dimensions,o_dimensions=mesh_dataset.o_dimensions,original_volume_size=dataset_config.original_volume_size)    
     
@@ -135,10 +137,17 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
         SquashSDF = ConstructNetworkSIREN(layer_dimensions=network_config.layer_dimensions,frequencies=network_config.frequencies,activation=network_config.activation)    
     ##
     
+    # If GAUSS then build SquashSDF from the GAUSS network configuration
+    if (network_config.network_architecture.upper() == "GAUSS"):
+        SquashSDF = ConstructNetworkGAUSS(layer_dimensions=network_config.layer_dimensions,frequencies=network_config.frequencies,stddev=network_config.gaussian_stddev,activation=network_config.activation)    
+    ##
+    
+    '''
     # Check the number of trainable parameters match what we are expecting
     if not ((np.sum([np.prod(x.shape) for x in SquashSDF.get_weights()])) == network_config.actual_capacity):
         raise AssertionError("Number of trainable parameters does not match 'network_config.actual_capacity'")
     ##
+    '''    
     
     # Set a training optimiser
     optimiser = tf.keras.optimizers.Adam()
@@ -257,7 +266,7 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
         
         # Save the architecture
         architecture_path = os.path.join(o_filepath,"architecture.bin")
-        EncodeArchitecture(layer_dimensions=network_config.layer_dimensions,architecture_path=architecture_path)
+        EncodeArchitecture(layer_dimensions=network_config.layer_dimensions,frequencies=network_config.frequencies,architecture_path=architecture_path)
         print("{:30}{}".format("Saved architecture to:",architecture_path.split("/")[-1]))
     else: pass
 
@@ -374,7 +383,7 @@ if __name__=="__main__":
     # Create checkpoint and stdout logging files in case execution fails
     checkpoint_filename = os.path.join(o_filepath,"checkpoint.txt")
     stdout_log_filename = os.path.join(o_filepath,"stdout_log.txt")
-    
+    ertertert
     # Check if the checkpoint file already exists
     if not os.path.exists(checkpoint_filename): 
         

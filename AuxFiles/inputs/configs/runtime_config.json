@@ -1,8 +1,8 @@
 {
     "print_verbose": true,
-    "save_network_flag": true,
+    "save_network_flag": false,
     "save_outputs_flag": true,
     "save_results_flag": true,
-    "visualise_mesh_dataset": true,
-    "visualise_grid_dataset": true
+    "visualise_mesh_dataset": false,
+    "visualise_grid_dataset": false
 }

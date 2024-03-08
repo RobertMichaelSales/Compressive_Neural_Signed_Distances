@@ -88,8 +88,8 @@ class NetworkConfigurationClass(GenericConfigurationClass):
     def GenerateStructure(self,i_dimensions,o_dimensions,original_volume_size):
             
         # Assert that self.network_architecture is one of the accepted options
-        if (self.network_architecture.upper() not in ["BASIC","SIREN"]):
-            raise AssertionError("Network arcitecture 'network_config.network_architecture' must be in '[BASIC, SIREN]'")
+        if (self.network_architecture.upper() not in ["BASIC","SIREN","GAUSS"]):
+            raise AssertionError("Network arcitecture 'network_config.network_architecture' must be in '[BASIC, SIREN, GAUSS]'")
         ##
         
         # Extract the useful internal parameters from the 'input_data' object
@@ -119,6 +119,17 @@ class NetworkConfigurationClass(GenericConfigurationClass):
             
             # Compute the network's total capacity
             self.actual_capacity = self.GetNetworkCapacitySIREN()
+            
+        ##
+        
+        # If GAUSS then calculate GetNetworkCapacitySIREN accordingly
+        if (self.network_architecture.upper() == "GAUSS"):
+            
+            # Compute the widths of hidden layers
+            self.neurons_per_layer = self.GetNeuronsPerLayerGAUSS() 
+            
+            # Compute the network's total capacity
+            self.actual_capacity = self.GetNetworkCapacityGAUSS()
             
         ##
 
@@ -324,6 +335,103 @@ class NetworkConfigurationClass(GenericConfigurationClass):
                 self.actual_capacity += (i_dimensions * o_dimensions) + o_dimensions
                 
                 # Add parameters from 2nd weight matrix and bias vector
+                self.actual_capacity += (i_dimensions * o_dimensions) + o_dimensions
+                
+            ##
+            
+        ##
+                  
+        return self.actual_capacity
+    
+    ##
+    
+    #==========================================================================
+    # Define a function to compute the minimum number of neurons needed by each 
+    # layer in order to achieve (just exceed) the target compression ratio
+
+    def GetNeuronsPerLayerGAUSS(self):
+      
+        # Start searching from the minimum of 1 neuron per layer
+        self.neurons_per_layer = int(self.minimum_neurons_per_layer)
+                
+        # Incriment neurons until the network capacity exceeds the target size
+        while (self.GetNetworkCapacityGAUSS() < self.target_capacity):
+            
+            self.neurons_per_layer = self.neurons_per_layer + 1
+            
+        ##
+          
+        # Determine the first neuron count that exceeds the target compression
+        self.neurons_per_layer = self.neurons_per_layer - 1
+        
+        return self.neurons_per_layer
+    
+    ##
+    
+    #==========================================================================
+    # Define a function to calculate the total number of network parameters for
+    # a siren network architecture (i.e. layer dimensions/neurons)
+    
+    # Note - total_layers is '+2' because the first sine layer, which is needed
+    # to make sure that the residual tensors are of the same shape, and because 
+    # the total_layers actually means "total blocks" in reality.
+    
+    # The network structure can be summarised as follows:
+    # [input_layer      -> sine_layer] + 
+    # [sine_layer/block -> sine_block] +
+    # [sine_block       -> output_layer]  
+    
+    def GetNetworkCapacityGAUSS(self): 
+        
+        # Determine the number of inter-layer operations (i.e. total layers)
+        self.total_layers = self.hidden_layers + 1     
+                  
+        # Set the total number of parameters to zero
+        self.actual_capacity = 0                                                         
+          
+        #Iterate through each layer in the network (including input/output)
+        for layer in np.arange(self.total_layers):
+          
+            # [input_layer -> hidden_layer]
+            if (layer==0):                             
+                
+                # Determine the input and output dimensions of each layer
+                if (self.frequencies > 0):
+                    i_dimensions = self.frequencies * 2
+                else:
+                    i_dimensions = self.i_dimensions
+                ##
+                      
+                o_dimensions = self.neurons_per_layer
+                
+                # Add parameters from the weight matrix and bias vector
+                self.actual_capacity += (i_dimensions * o_dimensions) + o_dimensions
+                
+                # Add parameters from the Gaussian input mapping matrix
+                self.actual_capacity += (self.frequencies * self.i_dimensions)
+                  
+            ##                
+          
+            # [hidden_layer -> output_layer]
+            elif (layer==self.total_layers-1):     
+    
+                # Determine the input and output dimensions of each layer
+                i_dimensions = self.neurons_per_layer
+                o_dimensions = self.o_dimensions
+                
+                # Add parameters from the weight matrix and bias vector
+                self.actual_capacity += (i_dimensions * o_dimensions) + o_dimensions
+                  
+            ##
+          
+            # [hidden_layer -> hidden_layer]
+            else:                         
+                
+                # Determine the input and output dimensions of each layer    
+                i_dimensions = self.neurons_per_layer                          
+                o_dimensions = self.neurons_per_layer
+                
+                # Add parameters from the weight matrix and bias vector
                 self.actual_capacity += (i_dimensions * o_dimensions) + o_dimensions
                 
             ##
