@@ -84,7 +84,7 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     print("-"*80,"\nCONFIGURING DATASET:")
         
     # Define mesh and grid dataset paths, from base path directory
-    base_data_path = os.path.splitext(dataset_config.mesh_filepath)[0]
+    base_data_path = dataset_config.mesh_filepath.replace("_mesh.obj","")
     mesh_data_path = base_data_path + "_mesh_({:})_({:})_({:}).npy".format(training_config.sample_method,training_config.dataset_size,"NORM" if network_config.normalise else "ORIG")
     grid_data_path = base_data_path + "_grid_({:})_({:})_({:}).npy".format(training_config.grid_resolution,training_config.bbox_scale,"NORM" if network_config.normalise else "ORIG")
     
@@ -121,33 +121,24 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     #==========================================================================
     # Configure network 
     print("-"*80,"\nCONFIGURING NETWORK:")
-    
-    # network_config.network_architecture = "SIREN"
-    
+        
     # Generate the network structure based on the input dimensions
     network_config.GenerateStructure(i_dimensions=mesh_dataset.i_dimensions,o_dimensions=mesh_dataset.o_dimensions,original_volume_size=dataset_config.original_volume_size)    
     
     # If BASIC then build SquashSDF from the BASIC network configuration
-    if (network_config.network_architecture.upper() == "BASIC"):
+    if (network_config.network_architecture == "basic"):
         SquashSDF = ConstructNetworkBASIC(layer_dimensions=network_config.layer_dimensions,frequencies=network_config.frequencies,activation=network_config.activation)    
     ##
     
     # If SIREN then build SquashSDF from the SIREN network configuration
-    if (network_config.network_architecture.upper() == "SIREN"):
-        SquashSDF = ConstructNetworkSIREN(layer_dimensions=network_config.layer_dimensions,frequencies=network_config.frequencies,activation=network_config.activation)    
+    if (network_config.network_architecture == "siren"):
+        SquashSDF = ConstructNetworkSIREN(layer_dimensions=network_config.layer_dimensions,frequencies=network_config.frequencies)    
     ##
     
     # If GAUSS then build SquashSDF from the GAUSS network configuration
-    if (network_config.network_architecture.upper() == "GAUSS"):
-        SquashSDF = ConstructNetworkGAUSS(layer_dimensions=network_config.layer_dimensions,frequencies=network_config.frequencies,stddev=network_config.gaussian_stddev,activation=network_config.activation)    
+    if (network_config.network_architecture == "gauss"):
+        SquashSDF = ConstructNetworkGAUSS(layer_dimensions=network_config.layer_dimensions,frequencies=network_config.frequencies,stddev=network_config.gaussian_stddev,activation=network_config.activation,gaussian_kernel=None)    
     ##
-    
-    '''
-    # Check the number of trainable parameters match what we are expecting
-    if not ((np.sum([np.prod(x.shape) for x in SquashSDF.get_weights()])) == network_config.actual_capacity):
-        raise AssertionError("Number of trainable parameters does not match 'network_config.actual_capacity'")
-    ##
-    '''    
     
     # Set a training optimiser
     optimiser = tf.keras.optimizers.Adam()
@@ -261,7 +252,7 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
         
         # Save the parameters
         parameters_path = os.path.join(o_filepath,"parameters.bin")
-        EncodeParameters(network=SquashSDF,parameters_path=parameters_path,values_bounds=(None,None))
+        EncodeParameters(network=SquashSDF,original_centre=original_centre,original_radius=original_radius,parameters_path=parameters_path)
         print("{:30}{}".format("Saved parameters to:",parameters_path.split("/")[-1]))
         
         # Save the architecture
@@ -317,7 +308,7 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     #==========================================================================
     print("-"*80,"\n")
     
-    return None
+    return SquashSDF
        
 #==============================================================================
 # Define the main function to run when file is invoked from within the terminal
@@ -383,7 +374,7 @@ if __name__=="__main__":
     # Create checkpoint and stdout logging files in case execution fails
     checkpoint_filename = os.path.join(o_filepath,"checkpoint.txt")
     stdout_log_filename = os.path.join(o_filepath,"stdout_log.txt")
-    ertertert
+    
     # Check if the checkpoint file already exists
     if not os.path.exists(checkpoint_filename): 
         
@@ -391,7 +382,7 @@ if __name__=="__main__":
         sys.stdout = Logger(stdout_log_filename)   
     
         # Execute compression
-        compress(network_config=network_config,dataset_config=dataset_config,runtime_config=runtime_config,training_config=training_config,o_filepath=o_filepath)
+        SquashSDF = compress(network_config=network_config,dataset_config=dataset_config,runtime_config=runtime_config,training_config=training_config,o_filepath=o_filepath)
         
         # Create a checkpoint file after successful execution
         with open(checkpoint_filename, mode='w'): pass

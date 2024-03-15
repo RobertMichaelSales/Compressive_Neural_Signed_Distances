@@ -11,6 +11,12 @@ from PIL import Image
 
 #==============================================================================
 
+# https://trimesh.org/trimesh.proximity.html#trimesh.proximity.ProximityQuery.signed_distance
+# Note: As in documentation (link above), Points OUTSIDE the mesh will have NEGATIVE distance
+# Hence, trimesh.proximity.signed_distance() outputs are henceforth multiplied by negative 1.
+
+#==============================================================================
+
 class MeshDataset():
     
     def __init__(self,mesh,sample_size,sample_method,dataset_size):
@@ -58,6 +64,7 @@ class MeshDataset():
     #==============================================================================
     
     # Returns coordinates and signed distances of points randomly distributed within the bounding sphere of a mesh
+    # Note: As stated above signed distances from trimesh.proximity.signed_distance() are multiplied by negative 1
     
     def UniformSampler(self,n_samples):
         
@@ -81,6 +88,8 @@ class MeshDataset():
         
         signed_distances = np.expand_dims(a=trimesh.proximity.signed_distance(self.mesh,sample_points_3d),axis=-1)
         
+        signed_distances = signed_distances * -1.0
+        
         return sample_points_3d, signed_distances
     
     ##    
@@ -89,6 +98,7 @@ class MeshDataset():
     
     # Returns coordinates and signed distances of points randomly sampled (with normally distributed offset) from the surface of a mesh
     # Barycentric coordinate system for sampling points from a triangle's vertices https://en.wikipedia.org/wiki/Barycentric_coordinate_system
+    # Note: As stated above signed distances from trimesh.proximity.signed_distance() are multiplied by negative 1
     
     def SurfaceSampler(self,n_samples):
     
@@ -110,6 +120,8 @@ class MeshDataset():
         
         signed_distances = np.expand_dims(a=trimesh.proximity.signed_distance(self.mesh,sample_points_3d),axis=-1)
         
+        signed_distances = signed_distances * -1.0
+        
         return sample_points_3d, signed_distances
         
     ##
@@ -117,6 +129,7 @@ class MeshDataset():
     #==========================================================================
     
     # Returns coordinates and signed distances of points randomly sampled (with normally distributed offset) from the nodes of a mesh
+    # Note: As stated above signed distances from trimesh.proximity.signed_distance() are multiplied by negative 1
     
     def VerticeSampler(self,n_samples):
         
@@ -125,6 +138,8 @@ class MeshDataset():
         sample_points_3d = np.random.normal(loc=sample_points_3d,scale=self.stdev)
         
         signed_distances = np.expand_dims(a=trimesh.proximity.signed_distance(self.mesh,sample_points_3d),axis=-1)
+        
+        signed_distances = signed_distances * -1.0
     
         return sample_points_3d, signed_distances
     
@@ -134,6 +149,7 @@ class MeshDataset():
     
     # Returns coordinates and signed distances of points sampled using Davies et al.'s importance sampling strategy, for any given mesh
     # "On the Effectiveness of Weight-Encoded Neural Implicit 3D Shapes" -> https://arxiv.org/abs/2009.09808
+    # Note: signed distances within ImportanceSampler() are already multiplied by negative 1, so this is not repeated
     
     def ImportanceSampler(self,n_samples):
         
@@ -353,6 +369,8 @@ class MeshDataGenerator():
         
         signed_distances = np.expand_dims(a=trimesh.proximity.signed_distance(self.mesh,sample_points_3d),axis=-1)
         
+        signed_distances = signed_distances * -1.0
+        
         return sample_points_3d, signed_distances
     
     ##    
@@ -382,6 +400,8 @@ class MeshDataGenerator():
         
         signed_distances = np.expand_dims(a=trimesh.proximity.signed_distance(self.mesh,sample_points_3d),axis=-1)
         
+        signed_distances = signed_distances * -1.0
+        
         return sample_points_3d, signed_distances
         
     ##
@@ -397,6 +417,8 @@ class MeshDataGenerator():
         sample_points_3d = np.random.normal(loc=sample_points_3d,scale=self.stdev)
         
         signed_distances = np.expand_dims(a=trimesh.proximity.signed_distance(self.mesh,sample_points_3d),axis=-1)
+        
+        signed_distances = signed_distances * -1.0
     
         return sample_points_3d, signed_distances
     
@@ -537,6 +559,8 @@ class GridDataset():
             sample_points_3d_batch = self.sample_points_3d[slice(*indices),:]
             
             signed_distances_batch = trimesh.proximity.signed_distance(self.mesh,sample_points_3d_batch)
+            
+            signed_distances = signed_distances * -1.0
             
             self.signed_distances[slice(*indices),:] = np.expand_dims(a=signed_distances_batch,axis=-1)
             
@@ -704,32 +728,5 @@ def SaveData(output_data_path,sample_points_3d,signed_distances,reverse_normalis
     gridToVTK(output_data_path,*sample_points_3d_list,pointData=signed_distances_dict)
         
     return None
-
-#==============================================================================
-# mesh_filepath = "/Data/SDF_Compression_Datasets/turbostream_domain_0/domain_0_mesh.obj"
-# normalise = True
-
-# mesh,original_centre,original_radius = LoadTrimesh(mesh_filepath=mesh_filepath,normalise=normalise)
-
-# sample_method = "Importance"
-# dataset_size = int(1e5)
-
-# mesh_data = MeshDataset(mesh=mesh,sample_size=2048,sample_method=sample_method,dataset_size=dataset_size)
-
-# # mesh_data.sample_points_3d = np.empty(shape=(0,3))
-# # mesh_data.signed_distances = np.empty(shape=(0,1))
-
-# uniform_points,signed_distances = mesh_data.UniformSampler(n_samples=int(10*mesh_data.ratio))
-
-# importance = np.exp(((-mesh_data.scale) * np.abs(signed_distances)))
-        
-# importance_cdf = np.concatenate(([0],np.cumsum(importance / np.sum(importance))))
-
-# sample_point_indices = np.array(np.searchsorted(a=importance_cdf,v=np.random.rand(10),side="right")-1)
-
-# sample_points_3d = uniform_points[sample_point_indices,:]
-
-# signed_distances = signed_distances[sample_point_indices,:]
-
 
 #==============================================================================

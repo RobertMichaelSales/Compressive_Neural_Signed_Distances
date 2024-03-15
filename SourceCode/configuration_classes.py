@@ -88,8 +88,8 @@ class NetworkConfigurationClass(GenericConfigurationClass):
     def GenerateStructure(self,i_dimensions,o_dimensions,original_volume_size):
             
         # Assert that self.network_architecture is one of the accepted options
-        if (self.network_architecture.upper() not in ["BASIC","SIREN","GAUSS"]):
-            raise AssertionError("Network arcitecture 'network_config.network_architecture' must be in '[BASIC, SIREN, GAUSS]'")
+        if (self.network_architecture not in ["basic","siren","gauss"]):
+            raise AssertionError("Network arcitecture 'network_config.network_architecture' must be in '[basic, siren, gauss]'")
         ##
         
         # Extract the useful internal parameters from the 'input_data' object
@@ -101,7 +101,7 @@ class NetworkConfigurationClass(GenericConfigurationClass):
         self.target_capacity = int((self.original_volume_size*self.i_dimensions)/self.target_compression_ratio)
         
         # If BASIC then calculate GetNetworkCapacityBASIC accordingly
-        if (self.network_architecture.upper() == "BASIC"):
+        if (self.network_architecture == "basic"):
             
             # Compute the widths of hidden layers
             self.neurons_per_layer = self.GetNeuronsPerLayerBASIC() 
@@ -112,7 +112,7 @@ class NetworkConfigurationClass(GenericConfigurationClass):
         ##
         
         # If SIREN then calculate GetNetworkCapacitySIREN accordingly
-        if (self.network_architecture.upper() == "SIREN"):
+        if (self.network_architecture == "siren"):
             
             # Compute the widths of hidden layers
             self.neurons_per_layer = self.GetNeuronsPerLayerSIREN() 
@@ -123,7 +123,7 @@ class NetworkConfigurationClass(GenericConfigurationClass):
         ##
         
         # If GAUSS then calculate GetNetworkCapacitySIREN accordingly
-        if (self.network_architecture.upper() == "GAUSS"):
+        if (self.network_architecture == "gauss"):
             
             # Compute the widths of hidden layers
             self.neurons_per_layer = self.GetNeuronsPerLayerGAUSS() 
@@ -139,7 +139,7 @@ class NetworkConfigurationClass(GenericConfigurationClass):
         # Write the network architecture as a list of layer dimensions
         self.layer_dimensions = [self.i_dimensions] + ([self.neurons_per_layer]*self.hidden_layers) + [self.o_dimensions]
         
-        # Print the network architecture: SIREN, BASIC
+        # Print the network architecture
         print("\n{:30}'{}'".format("Network Architecture:",self.network_architecture))
         
         # Print the network's target compression ratio

@@ -72,10 +72,7 @@ def PositionalEncoding(inputs,frequencies):
 
 # https://colab.research.google.com/github/tancik/fourier-feature-networks/blob/master/Demo.ipynb#scrollTo=BwbEtsn0gB2h
 
-def RFGaussianMapping(inputs,frequencies,stddev):
-    
-    # Generate a matrix of Gaussian features
-    gaussian_kernel = tf.random.normal(shape=[frequencies,inputs.shape[-1]],mean=0.0,stddev=stddev,dtype=tf.dtypes.float32)    
+def RFGaussianMapping(inputs,gaussian_kernel):
     
     # Compute the sin components    
     x_sin_gaussian = tf.math.sin(tf.linalg.matmul((2.0*np.pi*inputs),tf.transpose(gaussian_kernel)))
@@ -141,7 +138,7 @@ def ConstructNetworkBASIC(layer_dimensions,frequencies,activation):
 #==============================================================================
 # Define a function that constructs the 'siren' network 
 
-def ConstructNetworkSIREN(layer_dimensions,frequencies,activation):
+def ConstructNetworkSIREN(layer_dimensions,frequencies):
 
     # Set python, numpy and tensorflow random seeds for the same initialisation
     import random; tf.random.set_seed(123);np.random.seed(123);random.seed(123)
@@ -189,10 +186,13 @@ def ConstructNetworkSIREN(layer_dimensions,frequencies,activation):
 #==============================================================================
 # Define a function that constructs the 'basic' network 
 
-def ConstructNetworkGAUSS(layer_dimensions,frequencies,stddev,activation):
+def ConstructNetworkGAUSS(layer_dimensions,frequencies,stddev,activation,gaussian_kernel):
 
     # Set python, numpy and tensorflow random seeds for the same initialisation
     import random; tf.random.set_seed(123);np.random.seed(123);random.seed(123)
+    
+    # Generate a matrix of random gaussian features when gaussian_kernel = None
+    if not isinstance(gaussian_kernel,np.ndarray): gaussian_kernel = tf.random.normal(shape=[frequencies,layer_dimensions[0]],mean=0.0,stddev=stddev,dtype="float32")    
 
     # Compute the number of total network layers
     total_layers = len(layer_dimensions)
@@ -207,9 +207,9 @@ def ConstructNetworkGAUSS(layer_dimensions,frequencies,stddev,activation):
             
             # Add positional encoding if 'frequencies' > 0
             if (frequencies > 0):
-                x,gaussian_kernel = RFGaussianMapping(inputs=input_layer,frequencies=frequencies,stddev=stddev)               
+                x = RFGaussianMapping(inputs=input_layer,gaussian_kernel=gaussian_kernel)               
             else:
-                x,gaussian_kernel = input_layer,None
+                x = input_layer
             ##
                        
         # Add the final output layer
@@ -235,7 +235,5 @@ def ConstructNetworkGAUSS(layer_dimensions,frequencies,stddev,activation):
     return SquashSDF
 
 ##
-
-#==============================================================================
 
 #==============================================================================
