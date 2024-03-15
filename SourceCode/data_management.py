@@ -86,9 +86,7 @@ class MeshDataset():
             
         ##
         
-        signed_distances = np.expand_dims(a=trimesh.proximity.signed_distance(self.mesh,sample_points_3d),axis=-1)
-        
-        signed_distances = signed_distances * -1.0
+        signed_distances = -1.0 * np.expand_dims(a=trimesh.proximity.signed_distance(self.mesh,sample_points_3d),axis=-1)
         
         return sample_points_3d, signed_distances
     
@@ -118,10 +116,8 @@ class MeshDataset():
         
         sample_points_3d = np.random.normal(loc=sample_points_3d,scale=self.stdev)
         
-        signed_distances = np.expand_dims(a=trimesh.proximity.signed_distance(self.mesh,sample_points_3d),axis=-1)
-        
-        signed_distances = signed_distances * -1.0
-        
+        signed_distances = -1.0 * np.expand_dims(a=trimesh.proximity.signed_distance(self.mesh,sample_points_3d),axis=-1)
+                
         return sample_points_3d, signed_distances
         
     ##
@@ -137,9 +133,7 @@ class MeshDataset():
     
         sample_points_3d = np.random.normal(loc=sample_points_3d,scale=self.stdev)
         
-        signed_distances = np.expand_dims(a=trimesh.proximity.signed_distance(self.mesh,sample_points_3d),axis=-1)
-        
-        signed_distances = signed_distances * -1.0
+        signed_distances = -1.0 * np.expand_dims(a=trimesh.proximity.signed_distance(self.mesh,sample_points_3d),axis=-1)
     
         return sample_points_3d, signed_distances
     
@@ -367,9 +361,7 @@ class MeshDataGenerator():
             
         ##
         
-        signed_distances = np.expand_dims(a=trimesh.proximity.signed_distance(self.mesh,sample_points_3d),axis=-1)
-        
-        signed_distances = signed_distances * -1.0
+        signed_distances = -1.0 * np.expand_dims(a=trimesh.proximity.signed_distance(self.mesh,sample_points_3d),axis=-1)
         
         return sample_points_3d, signed_distances
     
@@ -416,9 +408,7 @@ class MeshDataGenerator():
     
         sample_points_3d = np.random.normal(loc=sample_points_3d,scale=self.stdev)
         
-        signed_distances = np.expand_dims(a=trimesh.proximity.signed_distance(self.mesh,sample_points_3d),axis=-1)
-        
-        signed_distances = signed_distances * -1.0
+        signed_distances = -1.0 * np.expand_dims(a=trimesh.proximity.signed_distance(self.mesh,sample_points_3d),axis=-1)
     
         return sample_points_3d, signed_distances
     
@@ -558,9 +548,7 @@ class GridDataset():
                 
             sample_points_3d_batch = self.sample_points_3d[slice(*indices),:]
             
-            signed_distances_batch = trimesh.proximity.signed_distance(self.mesh,sample_points_3d_batch)
-            
-            signed_distances = signed_distances * -1.0
+            signed_distances_batch = -1.0 * trimesh.proximity.signed_distance(self.mesh,sample_points_3d_batch)
             
             self.signed_distances[slice(*indices),:] = np.expand_dims(a=signed_distances_batch,axis=-1)
             

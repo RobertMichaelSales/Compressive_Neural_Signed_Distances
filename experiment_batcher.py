@@ -14,11 +14,11 @@ if __name__=="__main__":
     input_dataset_config_paths = sorted(glob.glob("/Data/SDF_Compression_Datasets/turbostream_domain_*/domain_*_mesh_config.json"))
             
     # Set experiment number
-    experiment_num = 4
+    experiment_num = 5
     
     # Set counter and total
     count = 1
-    total = len(input_dataset_config_paths)*4*3
+    total = len(input_dataset_config_paths)*4*2
     
     # Iterate through all inputs
     for input_dataset_config_path in input_dataset_config_paths:
@@ -29,9 +29,9 @@ if __name__=="__main__":
                     
                     for batch_size in np.array([1024]):
                         
-                        for frequencies in np.array([0,8,16,24]):
+                        for frequencies in np.array([0]):
                                                                         
-                            for hidden_layers in np.array([8]):
+                            for hidden_layers in np.array([4,8,12,16]):
                                 
                                 for activation in np.array(["relu"]):
                                     
@@ -43,7 +43,7 @@ if __name__=="__main__":
                                                 
                                                 for normalise in np.array([True]):
                                                     
-                                                    for network_architecture in np.array(["basic","siren","gauss"]):
+                                                    for network_architecture in np.array(["basic","siren"]):
             
                                                         # Set experiment campaign name
                                                         campaign_name = "EXP({:03d})_TCR({:011.6f})_ILR({:11.9f})_PEF({:03d})_NHL({:03d})_ACT({:})_BPN({:03d})_NNA({:})_DSM({:})_MDS({:})_({:})".format(experiment_num,compression_ratio,learning_rate,frequencies,hidden_layers,activation.upper(),bits_per_neuron,network_architecture.upper(),sample_method.upper(),int(dataset_size),"NORM" if normalise else "ORIG") 
