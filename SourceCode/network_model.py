@@ -1,4 +1,4 @@
-""" Created: 29.01.2024  \\  Updated: 19.02.2024  \\   Author: Robert Sales """
+""" Created: 29.01.2024  \\  Updated: 15.03.2024  \\   Author: Robert Sales """
 
 #==============================================================================
 # Import libraries and set flags
@@ -83,7 +83,7 @@ def RFGaussianMapping(inputs,gaussian_kernel):
     # Evaluate the encoding function on each input and concatenate
     x = tf.concat([x_sin_gaussian,x_cos_gaussian],axis=-1)   
     
-    return x,gaussian_kernel
+    return x
 
 ##
 

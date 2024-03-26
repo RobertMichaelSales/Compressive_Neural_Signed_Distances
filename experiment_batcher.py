@@ -1,4 +1,4 @@
-""" Created: 06.02.2024  \\  Updated: 07.02.2024  \\   Author: Robert Sales """
+""" Created: 06.02.2024  \\  Updated: 15.03.2024  \\   Author: Robert Sales """
 
 #==============================================================================
 # Import libraries
@@ -11,14 +11,14 @@ import numpy as np
 if __name__=="__main__": 
 
     # Set input data config options
-    input_dataset_config_paths = sorted(glob.glob("/Data/SDF_Compression_Datasets/turbostream_domain_*/domain_*_mesh_config.json"))
+    input_dataset_config_paths = sorted(glob.glob("/Data/SDF_Compression_Datasets/*/*_mesh_config.json"))
             
     # Set experiment number
     experiment_num = 5
     
     # Set counter and total
     count = 1
-    total = len(input_dataset_config_paths)*4*2
+    total = len(input_dataset_config_paths)*4
     
     # Iterate through all inputs
     for input_dataset_config_path in input_dataset_config_paths:

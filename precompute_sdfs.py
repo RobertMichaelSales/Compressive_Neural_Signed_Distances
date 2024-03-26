@@ -137,7 +137,7 @@ if __name__ == "__main__":
     
     ##
     
-    config_filepaths = sorted(glob.glob("/Data/SDF_Compression_Datasets/turbostream_*/*_config.json"))
+    config_filepaths = sorted(glob.glob("/Data/SDF_Compression_Datasets/*/*mesh_config.json"))
     
     config_filepaths = [x for x in config_filepaths if "mesh" in x]
     

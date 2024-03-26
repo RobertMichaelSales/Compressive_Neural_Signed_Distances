@@ -115,6 +115,8 @@ def OverlayImages():
         composite_image = Image.alpha_composite(true_image,pred_image)
         
         composite_image.show()
+        
+    ##
     
     return composite_image
 
@@ -122,49 +124,75 @@ def OverlayImages():
 
 #==============================================================================
 
-# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_0_mesh/EXP(001)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(ELU)_BPN(032)_NNA(BASIC)_DSM(VERTICE)_MDS(*)_(NORM)"))
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/armadillo_mesh/EXP(001)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(RELU)_BPN(032)_NNA(BASIC)_DSM(VERTICE)_MDS(*)_(NORM)"))
+# savename = "exp1_armadillo_basic_dataset_size.png"
+# independent_variable = "dataset_size"
+# CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
+
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/armadillo_mesh/EXP(001)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(RELU)_BPN(032)_NNA(SIREN)_DSM(VERTICE)_MDS(*)_(NORM)"))
+# savename = "exp1_armadillo_siren_dataset_size.png"
+# independent_variable = "dataset_size"
+# CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
+
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_0_mesh/EXP(001)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(RELU)_BPN(032)_NNA(BASIC)_DSM(VERTICE)_MDS(*)_(NORM)"))
 # savename = "exp1_domain0_basic_dataset_size.png"
 # independent_variable = "dataset_size"
 # CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
 
-# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_0_mesh/EXP(001)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(ELU)_BPN(032)_NNA(SIREN)_DSM(VERTICE)_MDS(*)_(NORM)"))
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_0_mesh/EXP(001)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(RELU)_BPN(032)_NNA(SIREN)_DSM(VERTICE)_MDS(*)_(NORM)"))
 # savename = "exp1_domain0_siren_dataset_size.png"
 # independent_variable = "dataset_size"
 # CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
 
-# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_1_mesh/EXP(001)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(ELU)_BPN(032)_NNA(BASIC)_DSM(VERTICE)_MDS(*)_(NORM)"))
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_1_mesh/EXP(001)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(RELU)_BPN(032)_NNA(BASIC)_DSM(VERTICE)_MDS(*)_(NORM)"))
 # savename = "exp1_domain1_basic_dataset_size.png"
 # independent_variable = "dataset_size"
 # CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
 
-# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_1_mesh/EXP(001)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(ELU)_BPN(032)_NNA(SIREN)_DSM(VERTICE)_MDS(*)_(NORM)"))
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_1_mesh/EXP(001)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(RELU)_BPN(032)_NNA(SIREN)_DSM(VERTICE)_MDS(*)_(NORM)"))
 # savename = "exp1_domain1_siren_dataset_size.png"
 # independent_variable = "dataset_size"
 # CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
 
 ##
 
-# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_0_mesh/EXP(002)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(ELU)_BPN(032)_NNA(BASIC)_DSM(*)_MDS(1000000)_(NORM)"))
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/armadillo_mesh/EXP(002)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(RELU)_BPN(032)_NNA(BASIC)_DSM(*)_MDS(1000000)_(NORM)"))
+# savename = "exp2_armadillo_basic_sample_method.png"
+# independent_variable = "sample_method"
+# CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
+
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/armadillo_mesh/EXP(002)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(RELU)_BPN(032)_NNA(SIREN)_DSM(*)_MDS(1000000)_(NORM)"))
+# savename = "exp2_armadillo_siren_sample_method.png"
+# independent_variable = "sample_method"
+# CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
+
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_0_mesh/EXP(002)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(RELU)_BPN(032)_NNA(BASIC)_DSM(*)_MDS(1000000)_(NORM)"))
 # savename = "exp2_domain0_basic_sample_method.png"
 # independent_variable = "sample_method"
 # CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
 
-# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_0_mesh/EXP(002)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(ELU)_BPN(032)_NNA(SIREN)_DSM(*)_MDS(1000000)_(NORM)"))
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_0_mesh/EXP(002)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(RELU)_BPN(032)_NNA(SIREN)_DSM(*)_MDS(1000000)_(NORM)"))
 # savename = "exp2_domain0_siren_sample_method.png"
 # independent_variable = "sample_method"
 # CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
 
-# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_1_mesh/EXP(002)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(ELU)_BPN(032)_NNA(BASIC)_DSM(*)_MDS(1000000)_(NORM)"))
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_1_mesh/EXP(002)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(RELU)_BPN(032)_NNA(BASIC)_DSM(*)_MDS(1000000)_(NORM)"))
 # savename = "exp2_domain1_basic_sample_method.png"
 # independent_variable = "sample_method"
 # CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
 
-# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_1_mesh/EXP(002)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(ELU)_BPN(032)_NNA(SIREN)_DSM(*)_MDS(1000000)_(NORM)"))
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_1_mesh/EXP(002)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(RELU)_BPN(032)_NNA(SIREN)_DSM(*)_MDS(1000000)_(NORM)"))
 # savename = "exp2_domain1_siren_sample_method.png"
 # independent_variable = "sample_method"
 # CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
 
 ##
+
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/armadillo_mesh/EXP(003)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(*)_BPN(032)_NNA(BASIC)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
+# experiments = [x for x in experiments if not any(y.upper() in x for y in ["exponential","linear","selu","sigmoid"])]
+# savename = "exp3_armadillo_basic_activations.png"
+# independent_variable = "activation"
+# CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
 
 # experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_0_mesh/EXP(003)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(*)_BPN(032)_NNA(BASIC)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
 # experiments = [x for x in experiments if not any(y.upper() in x for y in ["exponential","linear","selu","sigmoid"])]
@@ -179,6 +207,21 @@ def OverlayImages():
 # CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
 
 ##
+
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/armadillo_mesh/EXP(004)_TCR(0010.000000)_ILR(0.001000000)_PEF(*)_NHL(008)_ACT(RELU)_BPN(032)_NNA(BASIC)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
+# savename = "exp4_armadillo_basic_frequencies.png"
+# independent_variable = "frequencies"
+# CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
+
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/armadillo_mesh/EXP(004)_TCR(0010.000000)_ILR(0.001000000)_PEF(*)_NHL(008)_ACT(RELU)_BPN(032)_NNA(SIREN)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
+# savename = "exp4_armadillo_siren_frequencies.png"
+# independent_variable = "frequencies"
+# CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
+
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/armadillo_mesh/EXP(004)_TCR(0010.000000)_ILR(0.001000000)_PEF(*)_NHL(008)_ACT(RELU)_BPN(032)_NNA(GAUSS)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
+# savename = "exp4_armadillo_gauss_frequencies.png"
+# independent_variable = "frequencies"
+# CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
 
 # experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_0_mesh/EXP(004)_TCR(0010.000000)_ILR(0.001000000)_PEF(*)_NHL(008)_ACT(RELU)_BPN(032)_NNA(BASIC)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
 # savename = "exp4_domain0_basic_frequencies.png"
@@ -195,13 +238,68 @@ def OverlayImages():
 # independent_variable = "frequencies"
 # CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
 
-# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_0_mesh/EXP(004)_TCR(0010.000000)_ILR(0.001000000)_PEF(024)_NHL(008)_ACT(RELU)_BPN(032)_NNA(*)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_1_mesh/EXP(004)_TCR(0010.000000)_ILR(0.001000000)_PEF(*)_NHL(008)_ACT(RELU)_BPN(032)_NNA(BASIC)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
+# savename = "exp4_domain1_basic_frequencies.png"
+# independent_variable = "frequencies"
+# CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
+
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_1_mesh/EXP(004)_TCR(0010.000000)_ILR(0.001000000)_PEF(*)_NHL(008)_ACT(RELU)_BPN(032)_NNA(SIREN)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
+# savename = "exp4_domain1_siren_frequencies.png"
+# independent_variable = "frequencies"
+# CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
+
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_1_mesh/EXP(004)_TCR(0010.000000)_ILR(0.001000000)_PEF(*)_NHL(008)_ACT(RELU)_BPN(032)_NNA(GAUSS)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
+# savename = "exp4_domain1_gauss_frequencies.png"
+# independent_variable = "frequencies"
+# CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
+
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/armadillo_mesh/EXP(004)_TCR(0010.000000)_ILR(0.001000000)_PEF(016)_NHL(008)_ACT(RELU)_BPN(032)_NNA(*)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
+# savename = "exp4_armadillo_all_architectures.png"
+# independent_variable = "architecture"
+# CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
+
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_0_mesh/EXP(004)_TCR(0010.000000)_ILR(0.001000000)_PEF(016)_NHL(008)_ACT(RELU)_BPN(032)_NNA(*)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
 # savename = "exp4_domain0_all_architectures.png"
+# independent_variable = "architecture"
+# CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
+
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_1_mesh/EXP(004)_TCR(0010.000000)_ILR(0.001000000)_PEF(016)_NHL(008)_ACT(RELU)_BPN(032)_NNA(*)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
+# savename = "exp4_domain1_all_architectures.png"
 # independent_variable = "architecture"
 # CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
 
 ##
 
-# OverlayImages()
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/armadillo_mesh/EXP(005)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(*)_ACT(RELU)_BPN(032)_NNA(BASIC)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
+# savename = "exp5_armadillo_basic_hidden_layers.png"
+# independent_variable = "hidden_layers"
+# CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
+
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/armadillo_mesh/EXP(005)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(*)_ACT(RELU)_BPN(032)_NNA(SIREN)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
+# savename = "exp5_armadillo_siren_hidden_layers.png"
+# independent_variable = "hidden_layers"
+# CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
+
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_0_mesh/EXP(005)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(*)_ACT(RELU)_BPN(032)_NNA(BASIC)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
+# savename = "exp5_domain0_basic_hidden_layers.png"
+# independent_variable = "hidden_layers"
+# CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
+
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_0_mesh/EXP(005)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(*)_ACT(RELU)_BPN(032)_NNA(SIREN)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
+# savename = "exp5_domain0_siren_hidden_layers.png"
+# independent_variable = "hidden_layers"
+# CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
+
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_1_mesh/EXP(005)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(*)_ACT(RELU)_BPN(032)_NNA(BASIC)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
+# savename = "exp5_domain1_basic_hidden_layers.png"
+# independent_variable = "hidden_layers"
+# CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
+
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_1_mesh/EXP(005)_TCR(0010.000000)_ILR(0.001000000)_PEF(000)_NHL(*)_ACT(RELU)_BPN(032)_NNA(SIREN)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
+# savename = "exp5_domain1_siren_hidden_layers.png"
+# independent_variable = "hidden_layers"
+# CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
+
+##
 
 #==============================================================================
