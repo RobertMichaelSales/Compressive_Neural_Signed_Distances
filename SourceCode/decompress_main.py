@@ -24,24 +24,10 @@ parameters_path = "/home/rms221/Documents/Compressive_Neural_Signed_Distances/Au
 
 ##
 
-layer_dimensions,frequencies,activation = DecodeArchitectureBASIC(architecture_path=architecture_path)
+layer_dimensions,frequencies = DecodeArchitecture(architecture_path=architecture_path)
   
-SquashSDF = ConstructNetworkBASIC(layer_dimensions=layer_dimensions,frequencies=frequencies,activation=activation) 
+SquashSDF = ConstructNetwork(layer_dimensions=layer_dimensions,frequencies=frequencies) 
 
-##
-
-layer_dimensions,frequencies = DecodeArchitectureSIREN(architecture_path=architecture_path)
-
-SquashSDF = ConstructNetworkSIREN(layer_dimensions=layer_dimensions,frequencies=frequencies)    
-
-##
-
-layer_dimensions,activation,gaussian_kernel = DecodeArchitectureGAUSS(architecture_path=architecture_path)
-
-SquashSDF = ConstructNetworkSIREN(layer_dimensions=layer_dimensions,frequencies=None,stddev=None,activation=activation,gaussian_kernel=gaussian_kernel)    
-
-##
-
-parameters,original_centre,original_radius = DecodeParameters(network=SquashSDF_2,parameters_path=parameters_path)
+parameters,original_centre,original_radius = DecodeParameters(network=SquashSDF,parameters_path=parameters_path)
 
 AssignParameters(network=SquashSDF_2,parameters=parameters)  

@@ -125,20 +125,8 @@ def compress(network_config,dataset_config,runtime_config,training_config,o_file
     # Generate the network structure based on the input dimensions
     network_config.GenerateStructure(i_dimensions=mesh_dataset.i_dimensions,o_dimensions=mesh_dataset.o_dimensions,original_volume_size=dataset_config.original_volume_size)    
     
-    # If BASIC then build SquashSDF from the BASIC network configuration
-    if (network_config.network_architecture == "basic"):
-        SquashSDF = ConstructNetworkBASIC(layer_dimensions=network_config.layer_dimensions,frequencies=network_config.frequencies,activation=network_config.activation)    
-    ##
-    
-    # If SIREN then build SquashSDF from the SIREN network configuration
-    if (network_config.network_architecture == "siren"):
-        SquashSDF = ConstructNetworkSIREN(layer_dimensions=network_config.layer_dimensions,frequencies=network_config.frequencies)    
-    ##
-    
-    # If GAUSS then build SquashSDF from the GAUSS network configuration
-    if (network_config.network_architecture == "gauss"):
-        SquashSDF = ConstructNetworkGAUSS(layer_dimensions=network_config.layer_dimensions,frequencies=network_config.frequencies,stddev=network_config.gaussian_stddev,activation=network_config.activation,gaussian_kernel=None)    
-    ##
+    # Build SquashSDF from the ReLU network configuration
+    SquashSDF = ConstructNetwork(layer_dimensions=network_config.layer_dimensions,frequencies=network_config.frequencies)    
     
     # Set a training optimiser
     optimiser = tf.keras.optimizers.Adam()
