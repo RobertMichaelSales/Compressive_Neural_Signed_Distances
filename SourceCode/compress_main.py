@@ -328,7 +328,7 @@ if __name__=="__main__":
         ##   
         
         dataset_config_path = "/home/rms221/Documents/Compressive_Neural_Signed_Distances/AuxFiles/inputs/configs/dataset_config.json"
-        
+                
         with open(dataset_config_path) as dataset_config_file: 
             dataset_config_dictionary = json.load(dataset_config_file)
             dataset_config = GenericConfigurationClass(dataset_config_dictionary)

@@ -6,5 +6,5 @@
     "dataset_size": 1000000,
     "sample_method": "vertice",
     "grid_resolution": 64,
-    "bbox_scale": 1.1
+    "bbox_scale": 1.25
 }

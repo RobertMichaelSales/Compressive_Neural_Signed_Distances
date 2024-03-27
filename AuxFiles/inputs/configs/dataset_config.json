@@ -1,4 +1,4 @@
 {
-    "mesh_filepath": "/home/rms221/Documents/Compressive_Neural_Signed_Distances/AuxFiles/inputs/armadillo_mesh.obj",
-    "original_volume_size": 1000000
+    "mesh_filepath": "/Data/SDF_Compression_Datasets/armadillo/armadillo_mesh.obj",
+    "original_volume_size": 100000
 }

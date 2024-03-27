@@ -1,5 +1,5 @@
 {
-    "network_name": "squashsdf_savesdf",
+    "network_name": "squashsdf_siren_linear",
     "hidden_layers": 8,
     "frequencies": 0,
     "gaussian_stddev": 1.0,
@@ -8,5 +8,5 @@
     "minimum_neurons_per_layer": 1,
     "bits_per_neuron": 32,
     "normalise": true,
-    "network_architecture": "basic"
+    "network_architecture": "siren"
 }
