@@ -14,7 +14,7 @@ import tensorflow as tf
 # Import user-defined libraries 
 
 from data_management         import LoadMeshDataset,MakeMeshDataset,LoadGridDataset,MakeGridDataset,LoadTrimesh,SaveData
-from network_model           import ConstructNetworkBASIC,ConstructNetworkSIREN,ConstructNetworkGAUSS
+from network_model           import ConstructNetwork
 from network_encoder         import EncodeArchitecture, EncodeParameters
 from configuration_classes   import GenericConfigurationClass,NetworkConfigurationClass
 from compress_utilities      import TrainStep,GetLearningRate,MeanAbsoluteErrorMetric,Logger

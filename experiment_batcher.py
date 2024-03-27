@@ -43,7 +43,7 @@ if __name__=="__main__":
                                                 
                                                 for normalise in np.array([True]):
                                                     
-                                                    for network_architecture in np.array(["basic","siren"]):
+                                                    for network_architecture in np.array(["basic"]):
             
                                                         # Set experiment campaign name
                                                         campaign_name = "EXP({:03d})_TCR({:011.6f})_ILR({:11.9f})_PEF({:03d})_NHL({:03d})_ACT({:})_BPN({:03d})_NNA({:})_DSM({:})_MDS({:})_({:})".format(experiment_num,compression_ratio,learning_rate,frequencies,hidden_layers,activation.upper(),bits_per_neuron,network_architecture.upper(),sample_method.upper(),int(dataset_size),"NORM" if normalise else "ORIG") 
