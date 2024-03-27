@@ -1,4 +1,4 @@
 {
-    "mesh_filepath": "/Data/SDF_Compression_Datasets/armadillo/armadillo_mesh.obj",
-    "original_volume_size": 100000
+    "mesh_filepath": "/Data/SDF_Compression_Datasets/turbostream_domain_1/domain_1_mesh.obj",
+    "original_volume_size": 490770
 }
