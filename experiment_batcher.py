@@ -14,16 +14,16 @@ if __name__=="__main__":
     input_dataset_config_paths = sorted(glob.glob("/Data/SDF_Compression_Datasets/*/*_mesh_config.json"))
             
     # Set experiment number
-    experiment_num = 5
+    experiment_num = 6
     
     # Set counter and total
     count = 1
-    total = len(input_dataset_config_paths)*4
+    total = len(input_dataset_config_paths)*7
     
     # Iterate through all inputs
     for input_dataset_config_path in input_dataset_config_paths:
     
-        for compression_ratio in np.array([10]):
+        for compression_ratio in np.array([10,25,50,100,250,500,1000]):
             
                 for learning_rate in np.array([1e-3]):
                     
@@ -31,7 +31,7 @@ if __name__=="__main__":
                         
                         for frequencies in np.array([0]):
                                                                         
-                            for hidden_layers in np.array([4,8,12,16]):
+                            for hidden_layers in np.array([8]):
                                 
                                 for activation in np.array(["relu"]):
                                     
