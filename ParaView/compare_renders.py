@@ -302,19 +302,19 @@ def OverlayImages():
 
 ##
 
-experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/armadillo_mesh/EXP(006)_TCR(*)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(RELU)_BPN(032)_NNA(BASIC)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
-savename = "exp6_armadillo_basic_compression.png"
-independent_variable = "target_compression_ratio"
-CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/armadillo_mesh/EXP(006)_TCR(*)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(RELU)_BPN(032)_NNA(BASIC)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
+# savename = "exp6_armadillo_basic_compression.png"
+# independent_variable = "target_compression_ratio"
+# CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
 
-experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_0_mesh/EXP(006)_TCR(*)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(RELU)_BPN(032)_NNA(BASIC)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
-savename = "exp6_domain0_basic_compression.png"
-independent_variable = "target_compression_ratio"
-CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_0_mesh/EXP(006)_TCR(*)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(RELU)_BPN(032)_NNA(BASIC)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
+# savename = "exp6_domain0_basic_compression.png"
+# independent_variable = "target_compression_ratio"
+# CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
 
-experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_1_mesh/EXP(006)_TCR(*)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(RELU)_BPN(032)_NNA(BASIC)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
-savename = "exp6_domain1_basic_compression.png"
-independent_variable = "target_compression_ratio"
-CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
+# experiments = sorted(glob.glob("/Data/SDF_Compression_Experiments/domain_1_mesh/EXP(006)_TCR(*)_ILR(0.001000000)_PEF(000)_NHL(008)_ACT(RELU)_BPN(032)_NNA(BASIC)_DSM(VERTICE)_MDS(1000000)_(NORM)"))
+# savename = "exp6_domain1_basic_compression.png"
+# independent_variable = "target_compression_ratio"
+# CompareMatrix(experiments=experiments,independent_variable=independent_variable,savename=savename)
 
 #==============================================================================
